@@ -1,7 +1,7 @@
 # Wrestling Matchup Tool — Project Setup & Backlog
 
 ## Phase 0: Project Setup
-- [ ] Create public repo `wrestling-matchup-tool` on GitHub
+- [x] Create public repo `wrestling-matchup-tool` on GitHub — https://github.com/jkzarnosky/wrestling-matchup-tool
 - [x] README: problem statement, current-state summary, what this replaces/improves (pull from the PRD)
 - [x] `DECISIONS.md` — lightweight running log of *why*, not just *what* (this becomes your interview material later)
 - [x] `.gitignore` — exclude any real roster data; nothing with a real kid's name, weight, or team ever gets committed
