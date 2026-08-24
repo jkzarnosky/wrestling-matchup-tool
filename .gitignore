@@ -3,11 +3,14 @@ node_modules/
 
 # Build output
 dist/
+.next/
 *.tsbuildinfo
 
 # Env / secrets
 .env
-.env.*
+.env.local
+.env.*.local
+!.env.example
 
 # Real roster data — no real wrestler names, weights, or teams ever committed.
 # Only data/synthetic/ (generated fake data) is allowed in this repo.
