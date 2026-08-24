@@ -40,8 +40,11 @@ and [DECISIONS.md](DECISIONS.md) for why things were built the way they were.
 
 ## Stack
 
-TypeScript / Node.js. Vitest for tests. Sprint 1 is engine-only (CSV import, matching algorithm,
-CLI output) — no UI yet; see the backlog for the reasoning.
+Next.js (TypeScript, App Router) on Vercel, Drizzle ORM against Neon Postgres, Resend for email,
+hand-rolled passwordless auth. Vitest for tests. See [BACKLOG.md](BACKLOG.md)'s Architecture table and
+[DECISIONS.md](DECISIONS.md) for the reasoning. Work is tracked kanban-style on the
+[GitHub Project board](https://github.com/users/jkzarnosky/projects/1) — priority order lives in
+BACKLOG.md, not sprints/phases.
 
 ## Data privacy
 
@@ -52,5 +55,7 @@ use a generated synthetic dataset — see `data/synthetic/`.
 
 ```bash
 npm install
+cp .env.example .env.local   # fill in DATABASE_URL, RESEND_API_KEY, SESSION_SECRET
+npm run dev                  # app at http://localhost:3000
 npm test
 ```
