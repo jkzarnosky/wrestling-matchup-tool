@@ -6,7 +6,8 @@
 - [x] `DECISIONS.md` — lightweight running log of *why*, not just *what* (this becomes your interview material later)
 - [x] `.gitignore` — exclude any real roster data; nothing with a real kid's name, weight, or team ever gets committed
 - [x] Synthetic/sample dataset for dev and demos — generate fake wrestlers across all age brackets, skill levels, weights
-- [ ] GitHub Project board: Backlog / In Progress / Done
+- [x] GitHub Project board: Backlog / In Progress / Done — https://github.com/users/jkzarnosky/projects/1
+      (one issue per story below; this file stays the high-level roadmap, the board is the day-to-day tracker)
 - [x] GitHub Actions CI skeleton — runs tests on every PR from day one, even before there's much to test
 - [x] License (MIT is the standard default for a portfolio repo)
 
