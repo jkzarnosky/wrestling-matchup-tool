@@ -33,4 +33,28 @@ board still owns status (Todo/In Progress/Done); the file owns order.
 
 ---
 
+## 2026-08-24 — Full stack: Next.js + Vercel + Neon Postgres + hand-rolled auth
+
+**Chosen:** Next.js (API routes + React UI in one codebase) on Vercel, Neon (serverless Postgres) with
+Drizzle as the ORM, Resend for transactional email, and a hand-rolled email-OTP auth flow against our
+own `users`/`sessions` tables.
+
+**Alternatives considered:**
+- *Separate Express API + React SPA, hosted on Railway/Fly.io.* Cleaner frontend/backend separation,
+  but two deploys to run and CORS/session wiring to build by hand, for no functional benefit at this
+  scale — solo-maintained volunteer-league app, not a team needing that boundary.
+- *Supabase (Postgres + built-in email-OTP auth + Row-Level Security)* instead of Neon + hand-rolled
+  auth. Would let Postgres RLS enforce "Team Rep can only see their own team" at the DB layer instead
+  of in application code, and ships faster. Not chosen because this project is explicitly meant to be
+  interview material (see BACKLOG.md), and hand-writing the OTP/session flow is the more defensible
+  story than an outsourced auth provider. Revisit if the hand-rolled team-scoping checks prove error-prone.
+- *JWT/stateless sessions* instead of a DB-backed `sessions` table. Rejected because a session needs to
+  be revocable — this handles minors' data, and there's no way to invalidate a JWT before it expires.
+
+**Why Postgres specifically (not SQLite/NoSQL):** the data is genuinely relational — Wrestlers and
+Users reference Teams by foreign key, matchups reference wrestlers, change-history rows reference edits.
+Needs real FK integrity and will have concurrent writes from multiple teams once deployed live.
+
+---
+
 <!-- New entries go above this line -->

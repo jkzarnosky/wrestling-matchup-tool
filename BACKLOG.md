@@ -155,11 +155,13 @@ settles the rest of this list as real decisions, not hypotheticals.
 
 | Decision | Status | Notes |
 |---|---|---|
-| Hosting platform | TBD | Needs a real deploy target given live-use decision above |
-| Database | TBD | Depends on hosting choice |
-| Email delivery (invites + one-time login codes) | TBD | Needs a real transactional email service — not optional once this leaves localhost |
-| Session handling for passwordless login | TBD | How long a session lasts, where it's stored |
-| Rate limiting on the login-code endpoint | TBD | Nothing currently stops repeated code requests at one email |
+| Framework | **Decided: Next.js** | Single TS codebase for API routes + React UI |
+| Hosting platform | **Decided: Vercel** | First-class Next.js support, free tier covers this scale |
+| Database | **Decided: Neon (Postgres) + Drizzle ORM** | Relational data (Users/Teams/Wrestlers/history) needs real FK integrity |
+| Auth approach | **Decided: hand-rolled OTP** | Own `users`/`sessions` tables — not an outsourced auth provider |
+| Email delivery (invites + one-time login codes) | **Decided: Resend** | Transactional email API, free tier covers this volume |
+| Session handling for passwordless login | **Decided:** `sessions` table (id, user_id, expires_at) + signed httpOnly cookie | DB-backed so a session can be revoked — matters more since this handles minors' data |
+| Rate limiting on the login-code endpoint | **Decided:** DB-backed counter (attempts per email+IP per window) | No Redis needed at this traffic level |
 
 ## Definition of Done
 - Core business logic (matching engine, import validation, and similar) requires meaningful test
