@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.*
+
+# Real roster data — no real wrestler names, weights, or teams ever committed.
+# Only data/synthetic/ (generated fake data) is allowed in this repo.
+data/real/
+*.real.csv
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
