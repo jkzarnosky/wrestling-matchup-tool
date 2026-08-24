@@ -18,6 +18,36 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-24] — [MILESTONE] Product planning: Epics 1, .5, and 2 fleshed out
+**Shipped:** No code this session — this was product-owner work in the planning chat, turned into a
+restructured BACKLOG.md with real acceptance criteria per story, ready for Claude Code to sync into
+the existing GitHub issues.
+
+**Decisions made:**
+- **[DECISION]** Passwordless auth (email + one-time code) over managed passwords — infrequent,
+  low-stakes logins for volunteer coaches don't justify owning password storage/reset support; also
+  simplifies the invite flow to a single confirmation step.
+- **[DECISION]** `age_bracket` is calculated from `birthday`, never a direct input — weekly matchups
+  filter by allowable age *difference* (a kid can wrestle up one bracket), while tournament/
+  championship matchups filter by bracket *equality*, strictly. Two different rules by context, not
+  one shared constant.
+- **[DECISION]** CSV re-import never overwrites existing wrestlers — duplicates (matched by team +
+  name + birthday) are skipped, not merged, so data integrity/history stays tied to UI edits only.
+- **[DECISION]** A Team entity (name + conference) was missing from scope entirely — added as its own
+  story, ordered ahead of both the invite flow and CSV import, since both depend on a team already
+  existing.
+- **[DECISION]** Priority/ordering lives on the GitHub Project board, not duplicated as a list in
+  BACKLOG.md — avoids the two drifting out of sync. BACKLOG.md owns scope/AC; the board owns sequence.
+- **[DECISION]** This will be deployed live for the league to actually use, not left as a local-only/
+  repo-only project — settles hosting, DB, email delivery, session handling, and rate limiting as real
+  open decisions (tracked in BACKLOG.md) rather than deferred indefinitely.
+
+**Next up:** Resolve the Architecture/Infrastructure decisions in BACKLOG.md (hosting, DB, email
+service), then sync the new/updated stories from BACKLOG.md into GitHub issues before resuming Epic 1
+implementation.
+
+---
+
 ## [2026-08-24] — [MILESTONE] Phase 0: Project Setup
 **Shipped:** The project now has a real repo instead of just planning docs — a TypeScript/Node codebase
 with automated tests and a CI check that runs on every pull request, a README and decisions log, an MIT

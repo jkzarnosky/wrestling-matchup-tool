@@ -31,7 +31,7 @@ See [wrestling-matchup-tool-prd.md](wrestling-matchup-tool-prd.md) for the full 
 - **Nice to have:** qualifier/championship support, tot-o-rama (end-of-year, un-scored tournament for
   the youngest bracket).
 
-Full breakdown of epics and stories: [wrestling-matchup-tool-backlog.md](wrestling-matchup-tool-backlog.md).
+Full breakdown of epics, stories, and acceptance criteria: [BACKLOG.md](BACKLOG.md).
 
 ## Status
 

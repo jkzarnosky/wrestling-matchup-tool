@@ -17,3 +17,24 @@ Do not rewrite or reorder existing entries. Do not add an entry for routine work
 fixes, dependency bumps) — only for backlog items actually completed.
 
 If unsure whether something is log-worthy, ask before adding an entry rather than guessing.
+
+## Syncing BACKLOG.md AC into GitHub Issues
+BACKLOG.md is the single source of truth for scope and acceptance criteria. Each `### Story` heading
+in it is meant to match an existing GitHub issue title exactly (issues were originally created from
+this file).
+
+When JZ says something like "sync the backlog" or "update issues from the backlog":
+1. Run `gh issue list --state all --limit 100` to get current issues.
+2. For each `### Story` section in BACKLOG.md, find the issue whose title matches the story heading.
+   - Exact match → update it.
+   - No exact match (renamed story, or a genuinely new story) → list it separately and ask JZ before
+     creating a new issue or guessing at a rename.
+3. For each matched issue, run `gh issue edit <number> --body-file <tmpfile>` where the temp file
+   contains that story's Epic + AC content, formatted the same way as
+   `.github/ISSUE_TEMPLATE/story.md`.
+4. Skip any story still marked `AC: TBD` — don't overwrite an issue with a placeholder.
+5. Report back a short summary: issues updated (with numbers/links), stories skipped as TBD, and any
+   unmatched stories that need JZ's input.
+
+Never delete or close an issue as part of a sync. Never create a new issue during a sync without
+flagging it first — new issues only get created when JZ explicitly asks for one.
