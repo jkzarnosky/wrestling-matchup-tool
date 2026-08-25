@@ -8,6 +8,25 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-25] — [MILESTONE] Epic .5: Admin manages teams
+**Shipped:** An Admin can now create and edit teams (name + conference) through a real page at
+`/admin/teams`. Team Reps and anyone not logged in are blocked from these actions by the server, not
+just by hiding the page — checked directly (not through the browser UI) and confirmed both the list
+and create endpoints return "not logged in" instead of any data.
+
+**Decisions made:**
+- **[DECISION]** Conference is stored as free text, not a fixed two-value enum — the PRD/BACKLOG.md
+  never names the league's actual two conferences, so hardcoding placeholder names would just be
+  guessing. Free text costs nothing now and is trivial to tighten into an enum later once real names
+  are known.
+- **[DECISION]** Built as Next.js API routes (matching the login story's pattern) rather than Server
+  Actions — Server Actions would mean less boilerplate for this one story, but introducing a second
+  request pattern this early adds more inconsistency than it saves typing.
+
+**Next up:** Epic .5 — Admin invites a user.
+
+---
+
 ## [2026-08-25] — [MILESTONE] Epic .5: Login via emailed one-time code
 **Shipped:** Anyone with an account can now actually log in — enter your email, get a 6-digit code by
 email, enter the code, and you're signed in. Codes expire after 10 minutes and only work once. There's
