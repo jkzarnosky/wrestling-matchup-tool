@@ -176,6 +176,7 @@ of an epic because it needs its own conversation. Move a row into its epic once 
 |---|---|---|
 | Read-only matchup page | Needs its own AC pass — what exactly does it show (which week, which teams, how a parent finds it), does it need to reflect on-the-spot changes made at the event in real time? | This session |
 | Fill in `RESEND_API_KEY` and `SESSION_SECRET` in `.env.local` | Not needed yet — only required once the login-code email and session-cookie stories are implemented (Epic .5) | 2026-08-25 |
+| Test suite spins up a fresh pglite instance per test (`beforeEach`) | Cheap now (~3.5s for 5 tests), but watch as the DB test suite grows — may need a shared instance + per-test transaction rollback instead of a fresh instance each time, for speed | 2026-08-25 |
 
 ## Priority / Ordering
 Story order in this file **is** the priority order — top to bottom, epic by epic. The GitHub Project
