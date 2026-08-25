@@ -54,3 +54,16 @@ the repo owner). For any code or doc change:
 
 This applies to every change, including PROJECT-LOG.md/BACKLOG.md updates and Claude Code's own doc
 edits — there is no "small enough to skip the PR" exception.
+
+## Review conversation belongs on the PR, not just in chat
+On a team, PR review discussion happens as comments on the PR itself, so it's part of the permanent,
+browsable record. Our review conversation happens in chat instead, which isn't part of the repo — if it
+never gets written down anywhere else, a future reader of a PR (JZ later, a collaborator, an
+interviewer) sees none of the reasoning behind it.
+
+DECISIONS.md/PROJECT-LOG.md/commit messages already carry the distilled "why" for real decisions. The
+piece that was missing: when a chat exchange is substantively *about a specific open PR* (JZ asks why
+something was built a certain way, a tradeoff gets discussed, an adjustment gets made), post that
+exchange -- or a distilled version of it -- as an actual `gh pr comment` on that PR. That's the closest
+match to what a team's review thread would actually look like, and where a future reader would go
+looking for it. Applies going forward from 2026-08-25; earlier PRs weren't backfilled.
