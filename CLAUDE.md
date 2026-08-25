@@ -39,6 +39,10 @@ When JZ says something like "sync the backlog" or "update issues from the backlo
 Never delete or close an issue as part of a sync. Never create a new issue during a sync without
 flagging it first — new issues only get created when JZ explicitly asks for one.
 
+When a new story issue is created, set its **Milestone** to the matching epic (e.g. "Epic 1: Data
+Management") — not a label. Milestones group cleanly on the Project board's board view (labels are
+many-to-many and can't be grouped on); epic labels were removed for this reason on 2026-08-25.
+
 ## Git workflow: no direct pushes to main
 `main` is branch-protected (PR + passing CI required, no direct pushes, no force-push, enforced even for
 the repo owner). For any code or doc change:
