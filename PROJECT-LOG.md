@@ -8,11 +8,12 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
-## [2026-08-25] — [MILESTONE] Epic .5: Admin invites a user
+## [2026-08-25] — [MILESTONE] Epic .5: Admin invites a user + New user accepts invite
 **Shipped:** An Admin can invite someone by email (as Admin or, for a Team Rep, tied to a specific
 team) from `/admin/invites`. The invited person gets a one-time link; opening it lets them set their
 name and immediately logs them in — no password, ever. The Admin can see which invites are still
-pending versus already accepted.
+pending versus already accepted. Building the invite flow end to end covered both backlog stories at
+once — the accept-invite piece is exactly what "New user accepts invite" asked for.
 
 **Decisions made:**
 - **[DECISION]** Pending invites live in their own `invites` table rather than as incomplete `users`
