@@ -5,6 +5,28 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-08-25 — Epic grouping: Milestones, not labels
+
+**Chosen:** each epic is a GitHub Milestone (e.g. "Epic 1: Data Management"); all 30 story issues were
+reassigned from their epic label to the matching milestone, and the 7 epic labels were deleted.
+
+**Alternatives considered:**
+- *Keep the epic labels.* Rejected: labels are many-to-many (an issue can carry several), so the
+  Project board's board view can't group by them — a card would need to appear in multiple columns at
+  once. JZ hit this directly trying to group the board by epic.
+- *Parent issue / sub-issues* — create a tracking issue per epic, link stories as sub-issues. More
+  "correct" hierarchically and gets an automatic progress rollup like Milestones do, but it puts each
+  epic's description in a second place (the parent issue body) alongside BACKLOG.md's epic section —
+  the same two-sources-of-truth drift the BACKLOG-sync workflow already exists to avoid. Also less
+  scriptable: sub-issues isn't fully covered by the `gh` CLI, so linking 30 issues would mean raw
+  GraphQL calls instead of `gh issue edit`.
+
+**Why Milestones:** single-valued per issue (so board grouping works), a straight `gh issue edit
+--milestone` away, and a free bonus — GitHub auto-tracks "X of Y closed" progress per milestone, which
+is a real epic-completion view we didn't have before.
+
+---
+
 ## 2026-08-25 — Branch protection on main: PR + CI required, no direct pushes
 
 **Chosen:** `main` requires a pull request with a passing `test` CI check to merge; no direct pushes or
