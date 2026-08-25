@@ -175,6 +175,7 @@ of an epic because it needs its own conversation. Move a row into its epic once 
 | Item | Open Question / Why Tabled | Added |
 |---|---|---|
 | Read-only matchup page | Needs its own AC pass — what exactly does it show (which week, which teams, how a parent finds it), does it need to reflect on-the-spot changes made at the event in real time? | This session |
+| Fill in `RESEND_API_KEY` and `SESSION_SECRET` in `.env.local` | Not needed yet — only required once the login-code email and session-cookie stories are implemented (Epic .5) | 2026-08-25 |
 
 ## Priority / Ordering
 Story order in this file **is** the priority order — top to bottom, epic by epic. The GitHub Project
