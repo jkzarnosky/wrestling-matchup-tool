@@ -70,4 +70,22 @@ data model + CSV import/validation before touching the matching algorithm or any
 
 ---
 
+## [2026-08-25] — [MILESTONE] Epic .5: User data model
+**Shipped:** The database now has real tables for teams and user accounts (Admin or Team Rep), with a
+database-level rule that an Admin never has a team assigned and a Team Rep always does — that rule can't
+be bypassed by a bug in the app code later. The first Admin account (JZ) is seeded directly rather than
+through the not-yet-built invite flow, and re-running that seed script is safe (won't create a duplicate).
+
+**Decisions made:**
+- **[DECISION]** The Admin/Team-Rep team-assignment rule is enforced with a database CHECK constraint,
+  not just application code — a bug in a future feature can't silently violate it, since Postgres itself
+  rejects the bad row.
+- **[DECISION]** Schema/constraint tests run against an in-memory Postgres (pglite) built from the real
+  generated migration file, instead of against the live Neon database — same real Postgres behavior
+  (enums, constraints, unique indexes), but deterministic in CI with no database credentials needed.
+
+**Next up:** Epic .5 — Admin manages teams.
+
+---
+
 <!-- New entries go above this line -->
