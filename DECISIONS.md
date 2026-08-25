@@ -5,6 +5,27 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-08-25 — Branch protection on main: PR + CI required, no direct pushes
+
+**Chosen:** `main` requires a pull request with a passing `test` CI check to merge; no direct pushes or
+force-pushes, enforced for admins too (`enforce_admins: true`). Required approving review count is 0.
+
+**Alternatives considered:**
+- *Keep pushing straight to main* (what had been happening through Epic .5's first story) — no review
+  checkpoint before code reaches the public repo. Rejected once flagged: this project is explicitly
+  meant to demonstrate professional process, and "no review before it's live" isn't that.
+- *Required approving review count of 1* — the standard four-eyes control. Rejected for now because
+  JZ and Claude Code's `gh` session are the same GitHub account; GitHub won't let an account approve its
+  own PR, which would deadlock every merge. Human review still happens — JZ reads the diff and merges —
+  it's just not captured as a formal "Approve" click. Revisit if a second reviewer (human or bot) is
+  ever added.
+
+**Why enforce_admins: true:** without it, the repo owner could still push directly and silently bypass
+the whole point of the control. Enforcing it for everyone means the only way to change main is through
+the PR flow, even by accident.
+
+---
+
 ## 2026-08-24 — Language/runtime: TypeScript on Node.js
 
 **Chosen:** TypeScript/Node for the matching engine and Sprint 1 CLI.

@@ -38,3 +38,15 @@ When JZ says something like "sync the backlog" or "update issues from the backlo
 
 Never delete or close an issue as part of a sync. Never create a new issue during a sync without
 flagging it first — new issues only get created when JZ explicitly asks for one.
+
+## Git workflow: no direct pushes to main
+`main` is branch-protected (PR + passing CI required, no direct pushes, no force-push, enforced even for
+the repo owner). For any code or doc change:
+
+1. Create a branch (e.g. `21-user-data-model`, or `process/...` for non-issue work).
+2. Commit and push the branch, open a PR. Reference the issue with `Closes #N` when there is one.
+3. Wait for CI to pass, then tell JZ the PR is ready for review — do not merge it.
+4. JZ reviews and merges (or tells Claude Code to merge after saying "approved").
+
+This applies to every change, including PROJECT-LOG.md/BACKLOG.md updates and Claude Code's own doc
+edits — there is no "small enough to skip the PR" exception.
