@@ -8,6 +8,26 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-25] — [MILESTONE] Epic .5: Admin invites a user
+**Shipped:** An Admin can invite someone by email (as Admin or, for a Team Rep, tied to a specific
+team) from `/admin/invites`. The invited person gets a one-time link; opening it lets them set their
+name and immediately logs them in — no password, ever. The Admin can see which invites are still
+pending versus already accepted.
+
+**Decisions made:**
+- **[DECISION]** Pending invites live in their own `invites` table rather than as incomplete `users`
+  rows — a `users` row always represents a real, named account. "Pending vs. accepted" is which table
+  a row is in, not an inferred state from a null name. See DECISIONS.md for the alternative considered.
+- **[DECISION]** Invite links expire after 7 days — not specified in the AC (marked TBD), picked as a
+  reasonable default and logged as a judgment call to revisit, same as the login story's numbers.
+- **[DECISION]** Re-inviting an email that already has an account is rejected outright, rather than
+  silently allowed or silently ignored — avoids a confusing state where an invite link exists for
+  someone who can already just log in.
+
+**Next up:** Epic .5 — Team Rep base page.
+
+---
+
 ## [2026-08-25] — [MILESTONE] Epic .5: Admin manages teams
 **Shipped:** An Admin can now create and edit teams (name + conference) through a real page at
 `/admin/teams`. Team Reps and anyone not logged in are blocked from these actions by the server, not
