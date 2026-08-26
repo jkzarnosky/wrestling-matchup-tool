@@ -8,6 +8,27 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-25] — [MILESTONE] Epic .5: Login via emailed one-time code
+**Shipped:** Anyone with an account can now actually log in — enter your email, get a 6-digit code by
+email, enter the code, and you're signed in. Codes expire after 10 minutes and only work once. There's
+a real login page at `/login`, and the underlying session/code logic has its own automated tests
+proving the invalid-code, reused-code, expired-code, and too-many-requests cases are all correctly
+rejected, not just the happy path.
+
+**Decisions made:**
+- **[DECISION]** Built this story before "Admin manages teams," even though BACKLOG.md lists it later
+  — everything after it (teams, invites, base pages) needs a way to know who's logged in, so this had
+  to come first regardless of the file's listed order. See CLAUDE.md's git-workflow note.
+- **[DECISION]** Session/code lifetimes and the rate-limit threshold aren't specified anywhere in the
+  AC — picked reasonable defaults (10-min code expiry, 30-day session, 5 requests/15 min) and logged
+  them in DECISIONS.md as judgment calls to revisit, not settled requirements.
+- **[DECISION]** The login-code request endpoint always responds the same way regardless of whether
+  the email is registered, so it can't be used to enumerate valid accounts.
+
+**Next up:** Epic .5 — Admin manages teams.
+
+---
+
 ## [YYYY-MM-DD] — [MILESTONE] <Epic/story name>
 **Shipped:** one or two sentences on what actually works now.
 

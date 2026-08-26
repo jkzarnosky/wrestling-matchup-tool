@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, integer, pgEnum, pgTable, serial, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "team_rep"]);
 
@@ -27,3 +27,27 @@ export const users = pgTable(
     ),
   ]
 );
+
+// One-time login codes, emailed to a user. Code itself is never stored -- only its hash, so a DB
+// leak doesn't hand out usable codes (short-lived and single-use anyway, but no reason not to).
+export const otpCodes = pgTable("otp_codes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  codeHash: text("code_hash").notNull(),
+  requestedIp: text("requested_ip"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Sessions are DB-backed (not stateless JWTs) so a session can be revoked -- see DECISIONS.md.
+export const sessions = pgTable("sessions", {
+  id: text("id").primaryKey(), // random token; also the (HMAC-signed) cookie value
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
