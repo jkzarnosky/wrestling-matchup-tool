@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canViewTeam } from "../../lib/authorization";
+import { canViewTeam, requireAdmin } from "../../lib/authorization";
 
 describe("canViewTeam", () => {
   it("allows an Admin to view any team", () => {
@@ -13,5 +13,19 @@ describe("canViewTeam", () => {
 
   it("blocks a Team Rep from viewing another team", () => {
     expect(canViewTeam({ role: "team_rep", teamId: 5 }, 6)).toBe(false);
+  });
+});
+
+describe("requireAdmin", () => {
+  it("rejects no user with 401", () => {
+    expect(requireAdmin(null)).toEqual({ ok: false, status: 401, error: "Not logged in." });
+  });
+
+  it("rejects a Team Rep with 403", () => {
+    expect(requireAdmin({ role: "team_rep", teamId: 5 })).toEqual({ ok: false, status: 403, error: "Admins only." });
+  });
+
+  it("allows an Admin", () => {
+    expect(requireAdmin({ role: "admin", teamId: null })).toEqual({ ok: true });
   });
 });

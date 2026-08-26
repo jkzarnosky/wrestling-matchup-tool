@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
+import { requireAdmin } from "@/lib/authorization";
 import { getCurrentUser } from "@/lib/current-user";
 import { ValidationError, createInvite, listInvites } from "@/lib/invites";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Not logged in." }, { status: 401 });
-  if (user.role !== "admin") return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  const auth = requireAdmin(user);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const invites = await listInvites(db);
   return NextResponse.json({ invites });
@@ -14,8 +15,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Not logged in." }, { status: 401 });
-  if (user.role !== "admin") return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  const auth = requireAdmin(user);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await request.json().catch(() => null);
   try {
