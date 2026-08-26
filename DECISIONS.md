@@ -5,6 +5,26 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-08-25 — Login OTP implementation: thresholds and email enumeration
+
+**Chosen (numbers not specified anywhere in BACKLOG.md, picked as reasonable defaults):**
+- Code expiry: 10 minutes (BACKLOG.md's own example)
+- Session lifetime: 30 days — favors convenience for a low-stakes volunteer app over frequent
+  re-login; sessions are still revocable (DB-backed, see the earlier full-stack decision) if that
+  turns out to be wrong
+- Rate limit: 5 code requests per email per 15-minute window
+
+**Also decided:** `requestLoginCode` always returns success, whether or not the email belongs to a
+real user — it just silently does nothing for an unknown email instead of erroring. Prevents the
+endpoint being used to enumerate which emails have accounts. Not called out in the AC, but a standard
+enough practice that it didn't seem worth a design conversation to add.
+
+**Why call these out:** these are judgment calls, not requirements — flagging them so they're easy to
+challenge/adjust rather than silently baked in. Revisit the specific numbers if they prove wrong in
+practice.
+
+---
+
 ## 2026-08-25 — Epic grouping: Milestones, not labels
 
 **Chosen:** each epic is a GitHub Milestone (e.g. "Epic 1: Data Management"); all 30 story issues were
