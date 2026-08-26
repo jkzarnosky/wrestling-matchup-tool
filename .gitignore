@@ -5,6 +5,7 @@ node_modules/
 dist/
 .next/
 *.tsbuildinfo
+test-results/
 
 # Env / secrets
 .env
