@@ -5,6 +5,34 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-08-27 — CSV import: scoped to one target team, not free-form across the league
+
+**Chosen:** import always happens in the context of one team (whichever team page you're on); a CSV
+row's `team` column must match *that* team or the row is rejected, even if it names a real team
+elsewhere in the league.
+
+**Alternative considered:** treat the CSV as league-wide, with each row's `team` column picking its own
+destination team, letting one file cover multiple teams at once. This is what the pre-restructure #3
+issue implied. Rejected: it doesn't fit the already-shipped base-page model, where a Team Rep is
+hard-scoped to their own team and an Admin explicitly *selects* one team to act on — a free-form
+multi-team CSV would need its own, different authorization story. Scoped-to-one-team also makes the
+`team` column mostly a confirmation/typo-catcher rather than a real routing field, which matches how a
+real coach would fill out their own team's roster sheet.
+
+**Age bracket: computed live from `birthday`, using current date, not persisted.** Not stored as a
+column -- a snapshot would go stale as kids have birthdays mid-season. Uses today's date as the
+reference point, not a fixed season-cutoff date (e.g. "age as of Jan 1"), which is how many real youth
+leagues actually run age brackets specifically to avoid kids hopping brackets mid-season. BACKLOG.md's
+AC never specifies a cutoff rule, so this is a placeholder, not a considered choice -- flagged to
+revisit before Epic 2 (matchmaking) leans on brackets for real, since getting this wrong there has much
+more consequence than it does for Epic 1's CSV validation.
+
+**CSV parsing: `papaparse` dependency, not hand-rolled.** Quoted fields and embedded commas are real
+edge cases a real coach's spreadsheet export could hit; a well-tested library is safer than a parser
+written for this one story.
+
+---
+
 ## 2026-08-27 — Epic 1 AC review: closed 2 stale issues, resolved 3 ambiguities
 
 Reviewed all Epic 1 issues against BACKLOG.md before starting implementation. Four things resolved:

@@ -8,6 +8,27 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-27] — [MILESTONE] Epic 1: Import wrestler roster from CSV
+**Shipped:** A team's page now has a working CSV upload for its roster. Every row gets checked
+(required fields, valid past birthday, positive weight, skill level 1-4, sex) and sorted into created /
+skipped-as-duplicate / rejected-invalid, with a reason shown for anything that didn't get created — so
+re-running the same file twice is safe (nothing gets duplicated) instead of something to be careful
+about. The team page's roster section, previously a placeholder, now shows the real list.
+
+**Decisions made:**
+- **[DECISION]** A CSV import is scoped to one target team (whichever team page it's uploaded from) —
+  a row naming a different team is rejected, not routed there. See DECISIONS.md for the reasoning
+  against the alternative (one file spanning multiple teams).
+- **[DECISION]** Age bracket is computed live from birthday, using today's date, not a fixed
+  season-cutoff the way real youth leagues typically do it — a placeholder default logged as needing a
+  real answer before Epic 2 depends on it (see BACKLOG.md Parking Lot).
+- **[DECISION]** Wrestler creation (any path) writes one history marker row, not full field history —
+  matches the "Add/edit wrestler via UI" story's AC so both creation paths behave identically.
+
+**Next up:** Epic 1 — Add/edit wrestler via UI.
+
+---
+
 ## [2026-08-25] — [MILESTONE] Epic .5: Team Rep base page + Admin base page
 **Shipped:** Logged-in users now land on a real team page at `/team`. A Team Rep always sees their own
 team; an Admin can switch between any team via a dropdown. A Team Rep who tries to view another team's

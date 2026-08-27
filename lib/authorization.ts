@@ -3,7 +3,9 @@ interface AuthorizableUser {
   teamId: number | null;
 }
 
-/** Admin can view any team; Team Rep only their own. */
+/** Admin can view any team; Team Rep only their own. Also the write-scoping rule for that team's
+ * data (wrestlers, CSV import) -- the AC for viewing and editing a team's roster is the same
+ * "Admin any team, Team Rep own team only" rule, so this gates both rather than duplicating it. */
 export function canViewTeam(user: AuthorizableUser, teamId: number): boolean {
   return user.role === "admin" || user.teamId === teamId;
 }

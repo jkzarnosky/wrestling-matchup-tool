@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { canViewTeam } from "@/lib/authorization";
 import { getCurrentUser } from "@/lib/current-user";
 import { getTeamById, listTeams } from "@/lib/teams";
+import { listWrestlers } from "@/lib/wrestlers";
+import { CsvImportForm } from "./CsvImportForm";
 import { TeamSelector } from "./TeamSelector";
 
 export default async function TeamPage({ params }: { params: Promise<{ teamId: string }> }) {
@@ -33,6 +35,7 @@ export default async function TeamPage({ params }: { params: Promise<{ teamId: s
   }
 
   const allTeams = user.role === "admin" ? await listTeams(db) : null;
+  const roster = await listWrestlers(db, team.id);
 
   return (
     <main>
@@ -42,18 +45,28 @@ export default async function TeamPage({ params }: { params: Promise<{ teamId: s
       {allTeams && <TeamSelector teams={allTeams} currentTeamId={team.id} />}
 
       <section>
-        <h2>Roster</h2>
-        <p>Coming soon -- Epic 1 (wrestler data model).</p>
+        <h2>Roster ({roster.length})</h2>
+        {roster.length === 0 ? (
+          <p>No wrestlers yet.</p>
+        ) : (
+          <ul>
+            {roster.map((w) => (
+              <li key={w.id}>
+                {w.firstName} {w.lastName} -- {w.sex}, {w.weightLbs} lbs, skill {w.skillLevel}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section>
         <h2>Import roster from CSV</h2>
-        <p>Coming soon -- Epic 1.</p>
+        <CsvImportForm teamId={team.id} />
       </section>
 
       <section>
-        <h2>Edit wrestler</h2>
-        <p>Coming soon -- Epic 1.</p>
+        <h2>Add/edit wrestler</h2>
+        <p>Coming soon.</p>
       </section>
     </main>
   );
