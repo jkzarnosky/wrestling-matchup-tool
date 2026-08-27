@@ -73,7 +73,10 @@ Simplifies the invite flow too — accepting an invite just confirms identity, n
 ### Story: Import wrestler roster from CSV
 **AC:**
 - Given a CSV with columns `team, first_name, last_name, birthday, weight, skill_level, sex`, all valid rows create wrestler records with correct field values
-- `team` must match an existing Team record exactly (Team entity from Epic .5) — it is a reference, not free text; a row whose team doesn't match an existing team is rejected with that reason, never used to silently create a new team
+- `team` must match an existing Team record — reference, not free text. Matching is trimmed and
+  case-insensitive (a coach's spreadsheet having "ironclad wrestling club " shouldn't reject against
+  "Ironclad Wrestling Club"); a row whose team still doesn't match any existing team is rejected with
+  that reason, never used to silently create a new team
 - `age_bracket` is calculated from `birthday` — never accepted as a CSV column; ignore it if present
 - Missing required field (any column above) → row rejected, not silently skipped
 - Type/range validation: `birthday` valid past date; `weight` positive number; `skill_level` integer 1–4 (1 = expert, 4 = first-year — do not invert); `sex` is M/F
@@ -81,14 +84,20 @@ Simplifies the invite flow too — accepting an invite just confirms identity, n
 - Duplicate = same `team + first_name + last_name + birthday`; rejected with reason, not merged
 - Successful import returns summary: count created, count rejected, rejected rows with reasons
 - No per-field history on initial import — just a "created via import" marker; history starts at first UI edit
+- Admin can import for any team (via the team selector already on the Admin base page), same as a
+  Team Rep can for their own team
 - **Out of scope:** ongoing re-import/sync (this is initial bulk-load only)
 
 ### Story: Add/edit wrestler via UI
 **AC:**
 - Team Rep can add a new wrestler through a form (same required fields as CSV import, same validation rules)
 - Team Rep can edit an existing wrestler on their own team only
+- Admin can add/edit a wrestler on any team (via the team selector), same as Team Rep can for their own team
 - `age_bracket` is always calculated/displayed, never directly editable
-- Every save writes a history record: field, old value, new value, who, when
+- Creating a wrestler writes only a "created via UI" marker, not a full field-by-field history entry —
+  consistent with CSV import; history proper starts at the first edit, regardless of how the wrestler
+  was created
+- Every edit (after creation) writes a history record: field, old value, new value, who, when
 
 ### Story: Wrestler change history view
 **AC:** TBD — needs a decision on who can view history (Admin only, or Team Rep for their own team too) and whether it's a full audit log or a simplified "last changed" view.
