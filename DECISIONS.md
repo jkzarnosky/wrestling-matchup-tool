@@ -5,6 +5,36 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-08-27 — Epic 1 AC review: closed 2 stale issues, resolved 3 ambiguities
+
+Reviewed all Epic 1 issues against BACKLOG.md before starting implementation. Four things resolved:
+
+**Closed #2 and #3 as superseded.** #2's scope ("surface bad rows instead of failing silently") is
+fully covered by #1's current AC (missing-field rejection, type/range validation, invalid-row report).
+#3 never had AC, and its title ("weekly matchup run") is Epic 2 scope, not Epic 1 — #1's `team` column
+being per-row already means one CSV can span multiple teams. Both predate the BACKLOG.md restructure
+and were never updated to match.
+
+**CSV team-name matching: trimmed + case-insensitive**, not byte-exact. Alternative (exact match) would
+reject a real coach's spreadsheet over a trailing space or capitalization difference — a false rejection
+serves no one, since the intent (which team) is unambiguous either way.
+
+**Admin can do CSV import and add/edit wrestlers for any team**, not just Team Rep for their own team —
+consistent with the team-selector pattern already shipped on the Admin base page for viewing. Wasn't
+stated in either story's AC, only inferable from the base-page stories; made explicit now rather than
+left as an assumption to rediscover during implementation.
+
+**Wrestler creation gets a marker only, not full field history, on both creation paths.** CSV import
+already said so explicitly; "Add/edit wrestler via UI" only said "every save writes a history record"
+without distinguishing create from edit. Made UI-creation match CSV-creation rather than leaving two
+creation paths with silently different history behavior.
+
+**Still open:** "Wrestler change history view" story remains `AC: TBD` — who can view history (Admin
+only vs. Team Rep for their own team too) and full audit log vs. simplified view are both still
+unresolved. No GitHub issue exists for it yet.
+
+---
+
 ## 2026-08-25 — Pending invites: separate table, not nullable columns on users
 
 **Chosen:** a standalone `invites` table (email, role, team_id, token, expires_at, accepted_at). A
