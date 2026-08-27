@@ -8,6 +8,28 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-27] — [MILESTONE] Epic 1: Add/edit wrestler via UI
+**Shipped:** A team's roster page now has a real form for adding a wrestler by hand and editing an
+existing one in place, no CSV required — same field validation either way (required fields, past
+birthday, positive weight, skill 1-4, sex). Editing a wrestler now writes a real audit trail: exactly
+which field changed, what it was, what it became, who did it, and when.
+
+**Decisions made:**
+- **[DECISION]** Folded the CSV-import form, the roster list, and the new add/edit form into one
+  component (`WrestlerManager`) instead of three separate ones — they all need to refresh the same
+  roster state after any of them succeeds, which is simpler as one shared component than coordinating
+  a refresh signal across three.
+- **[DECISION]** Field validation logic (required fields, birthday/weight/skill/sex rules) is shared
+  between CSV import and the UI form, not duplicated — both call the same internal validator, so a
+  future rule change can't accidentally apply to only one path.
+- **[DECISION]** Team can't be changed via edit — no story asks for moving a wrestler between teams,
+  and adding that silently would be scope no one asked for.
+
+**Next up:** Epic 1 — Re-attempting a CSV import (likely already satisfied by the import story's
+duplicate handling — needs its own review before closing).
+
+---
+
 ## [2026-08-27] — [MILESTONE] Epic 1: Import wrestler roster from CSV
 **Shipped:** A team's page now has a working CSV upload for its roster. Every row gets checked
 (required fields, valid past birthday, positive weight, skill level 1-4, sex) and sorted into created /

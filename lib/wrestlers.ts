@@ -5,10 +5,7 @@ import type { AppDb } from "../db/types";
 
 export class ValidationError extends Error {}
 
-const REQUIRED_COLUMNS = ["team", "first_name", "last_name", "birthday", "weight", "skill_level", "sex"] as const;
-
-interface ParsedRow {
-  team: string;
+interface WrestlerFields {
   firstName: string;
   lastName: string;
   birthday: Date;
@@ -42,20 +39,19 @@ function dupeKey(firstName: string, lastName: string, birthday: Date): string {
   );
 }
 
-function validateRow(raw: Record<string, string>, targetTeamName: string): ParsedRow | { reason: string } {
-  for (const col of REQUIRED_COLUMNS) {
-    if (!raw[col]?.trim()) {
-      return { reason: `Missing required field: ${col}` };
+/** Shared by CSV import and the add/edit-via-UI form -- "same required fields ... same validation
+ * rules" per the AC. Takes raw strings either way (HTML form fields are strings too). */
+function validateWrestlerFields(
+  raw: Partial<Record<"first_name" | "last_name" | "birthday" | "weight" | "skill_level" | "sex", string>>
+): WrestlerFields | { reason: string } {
+  const REQUIRED = ["first_name", "last_name", "birthday", "weight", "skill_level", "sex"] as const;
+  for (const field of REQUIRED) {
+    if (!raw[field]?.trim()) {
+      return { reason: `Missing required field: ${field}` };
     }
   }
 
-  // Trimmed + case-insensitive on purpose -- see DECISIONS.md (a coach's spreadsheet having
-  // "ironclad wrestling club " shouldn't reject against "Ironclad Wrestling Club").
-  if (normalizeTeamName(raw.team) !== normalizeTeamName(targetTeamName)) {
-    return { reason: `Team "${raw.team}" doesn't match the team you're importing into ("${targetTeamName}")` };
-  }
-
-  const birthday = new Date(raw.birthday);
+  const birthday = new Date(raw.birthday!);
   if (Number.isNaN(birthday.getTime())) {
     return { reason: `Invalid birthday: "${raw.birthday}"` };
   }
@@ -73,15 +69,14 @@ function validateRow(raw: Record<string, string>, targetTeamName: string): Parse
     return { reason: `Invalid skill_level: "${raw.skill_level}" (must be an integer 1-4)` };
   }
 
-  const sex = raw.sex.trim().toUpperCase();
+  const sex = raw.sex!.trim().toUpperCase();
   if (sex !== "M" && sex !== "F") {
     return { reason: `Invalid sex: "${raw.sex}" (must be M or F)` };
   }
 
   return {
-    team: raw.team.trim(),
-    firstName: raw.first_name.trim(),
-    lastName: raw.last_name.trim(),
+    firstName: raw.first_name!.trim(),
+    lastName: raw.last_name!.trim(),
     birthday,
     weightLbs,
     skillLevel,
@@ -121,8 +116,26 @@ export async function importWrestlersFromCsv(
 
   for (let i = 0; i < parsed.data.length; i++) {
     const rowNumber = i + 1;
-    const result = validateRow(parsed.data[i], team.name);
+    const raw = parsed.data[i];
 
+    if (!raw.team?.trim()) {
+      rows.push({ row: rowNumber, status: "invalid", reason: "Missing required field: team" });
+      invalidCount++;
+      continue;
+    }
+    // Trimmed + case-insensitive on purpose -- see DECISIONS.md (a coach's spreadsheet having
+    // "ironclad wrestling club " shouldn't reject against "Ironclad Wrestling Club").
+    if (normalizeTeamName(raw.team) !== normalizeTeamName(team.name)) {
+      rows.push({
+        row: rowNumber,
+        status: "invalid",
+        reason: `Team "${raw.team}" doesn't match the team you're importing into ("${team.name}")`,
+      });
+      invalidCount++;
+      continue;
+    }
+
+    const result = validateWrestlerFields(raw);
     if ("reason" in result) {
       rows.push({ row: rowNumber, status: "invalid", reason: result.reason });
       invalidCount++;
@@ -141,18 +154,7 @@ export async function importWrestlersFromCsv(
     }
     seenInFile.add(key);
 
-    const [wrestler] = await db
-      .insert(wrestlers)
-      .values({
-        teamId,
-        firstName: result.firstName,
-        lastName: result.lastName,
-        birthday: result.birthday,
-        weightLbs: result.weightLbs,
-        skillLevel: result.skillLevel,
-        sex: result.sex,
-      })
-      .returning();
+    const [wrestler] = await db.insert(wrestlers).values({ teamId, ...result }).returning();
 
     await db.insert(wrestlerHistory).values({
       wrestlerId: wrestler.id,
@@ -169,4 +171,77 @@ export async function importWrestlersFromCsv(
 
 export async function listWrestlers(db: AppDb, teamId: number): Promise<(typeof wrestlers.$inferSelect)[]> {
   return db.select().from(wrestlers).where(eq(wrestlers.teamId, teamId)).orderBy(wrestlers.lastName);
+}
+
+export async function getWrestlerById(db: AppDb, id: number): Promise<typeof wrestlers.$inferSelect | null> {
+  const [wrestler] = await db.select().from(wrestlers).where(eq(wrestlers.id, id)).limit(1);
+  return wrestler ?? null;
+}
+
+type WrestlerFormInput = Partial<Record<"first_name" | "last_name" | "birthday" | "weight" | "skill_level" | "sex", string>>;
+
+/** Creating via UI writes a marker only, same as CSV import -- see DECISIONS.md. */
+export async function createWrestler(
+  db: AppDb,
+  teamId: number,
+  input: WrestlerFormInput,
+  createdByUserId: number
+): Promise<typeof wrestlers.$inferSelect> {
+  const result = validateWrestlerFields(input);
+  if ("reason" in result) throw new ValidationError(result.reason);
+
+  const teamRoster = await listWrestlers(db, teamId);
+  const key = dupeKey(result.firstName, result.lastName, result.birthday);
+  if (teamRoster.some((w) => dupeKey(w.firstName, w.lastName, w.birthday) === key)) {
+    throw new ValidationError(`A wrestler matching ${result.firstName} ${result.lastName} already exists on this team.`);
+  }
+
+  const [wrestler] = await db.insert(wrestlers).values({ teamId, ...result }).returning();
+  await db.insert(wrestlerHistory).values({
+    wrestlerId: wrestler.id,
+    action: "created_via_ui",
+    changedBy: createdByUserId,
+  });
+  return wrestler;
+}
+
+const EDITABLE_FIELDS = ["firstName", "lastName", "birthday", "weightLbs", "skillLevel", "sex"] as const;
+
+function fieldToString(value: unknown): string {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value);
+}
+
+/** Edits an existing wrestler; writes one history row per field that actually changed. Never
+ * touches teamId (no story asks for transferring a wrestler between teams) or age_bracket
+ * (calculated, never stored/editable). */
+export async function updateWrestler(
+  db: AppDb,
+  wrestlerId: number,
+  input: WrestlerFormInput,
+  editedByUserId: number
+): Promise<typeof wrestlers.$inferSelect> {
+  const existing = await getWrestlerById(db, wrestlerId);
+  if (!existing) throw new ValidationError("Wrestler not found.");
+
+  const result = validateWrestlerFields(input);
+  if ("reason" in result) throw new ValidationError(result.reason);
+
+  const [updated] = await db.update(wrestlers).set(result).where(eq(wrestlers.id, wrestlerId)).returning();
+
+  for (const field of EDITABLE_FIELDS) {
+    const oldValue = fieldToString(existing[field]);
+    const newValue = fieldToString(updated[field]);
+    if (oldValue !== newValue) {
+      await db.insert(wrestlerHistory).values({
+        wrestlerId,
+        action: "edited",
+        field,
+        oldValue,
+        newValue,
+        changedBy: editedByUserId,
+      });
+    }
+  }
+
+  return updated;
 }
