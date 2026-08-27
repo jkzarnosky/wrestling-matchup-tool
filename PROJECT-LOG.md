@@ -8,6 +8,20 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-27] — [MILESTONE] Epic 1: Re-attempting a CSV import
+**Shipped:** Nothing new to build — this story's entire AC (re-running a CSV import skips existing
+wrestlers instead of overwriting them, genuinely new rows still get added, and the summary distinguishes
+why each row didn't get created) was already satisfied by the "Import wrestler roster from CSV" story's
+duplicate-detection design. Added one test making that explicit for the exact scenario the AC describes
+(some rows already on file, one row that isn't) rather than closing on the strength of the single-row
+duplicate test alone.
+
+**Next up:** Epic 1 is done except "Wrestler change history view," which is still `AC: TBD` with no
+GitHub issue — needs a product decision (who can view history, full audit log vs. simplified) before
+it can be scoped. Epic 2 (Weekly Matchmaking Engine) is next up for real work.
+
+---
+
 ## [2026-08-27] — [MILESTONE] Epic 1: Add/edit wrestler via UI
 **Shipped:** A team's roster page now has a real form for adding a wrestler by hand and editing an
 existing one in place, no CSV required — same field validation either way (required fields, past

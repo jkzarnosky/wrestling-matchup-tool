@@ -97,6 +97,24 @@ describe("importWrestlersFromCsv", () => {
     const roster = await listWrestlers(db, team.id);
     expect(roster).toHaveLength(1); // not overwritten/duplicated
   });
+
+  it("re-import: existing rows skip as duplicates, genuinely new rows still get added", async () => {
+    const { team, admin } = await setup(db);
+    await importWrestlersFromCsv(db, team.id, `${HEADER}\n${team.name},Sam,Rep,2018-03-20,55,3,M`, admin.id);
+
+    // Same file as before, plus one wrestler who wasn't on file yet.
+    const secondFile = `${HEADER}
+${team.name},Sam,Rep,2018-03-20,55,3,M
+${team.name},Jordan,Smith,2016-09-01,71,2,F`;
+
+    const result = await importWrestlersFromCsv(db, team.id, secondFile, admin.id);
+    expect(result).toMatchObject({ createdCount: 1, duplicateCount: 1, invalidCount: 0 });
+    expect(result.rows[0]).toMatchObject({ status: "duplicate" });
+    expect(result.rows[1]).toMatchObject({ status: "created" });
+
+    const roster = await listWrestlers(db, team.id);
+    expect(roster.map((w) => w.firstName).sort()).toEqual(["Jordan", "Sam"]);
+  });
 });
 
 // Small helper so the AC-driven table above reads without repeating the team name everywhere.
