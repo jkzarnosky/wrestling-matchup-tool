@@ -56,7 +56,7 @@ Four tiers, from cheapest/most-numerous to most expensive/rarest:
 | 1. Unit | Pure functions, no I/O (`canViewTeam`, `requireAdmin`, validation) | Vitest | Mostly folded into Tier 2 files today |
 | 2. Integration | Business logic that touches the database | Vitest + [pglite](https://github.com/electric-sql/pglite) (embedded real Postgres, built from the real migration SQL) | Primary suite — auth, teams, invites, schema/constraints |
 | 3. Route/API | Next.js route handlers — auth gating, request parsing, response shape/status codes | Vitest, importing route handlers directly with `@/db` and the relevant `lib/*` module mocked out | One reference example (`__tests__/api/teams.test.ts`); required for new routes going forward, see BACKLOG.md's Definition of Done |
-| 4. End-to-end | Full user flows through a real running app in a real browser | None automated yet — verified manually per story during development | Small set planned for the critical paths (login, invite-accept), not full coverage |
+| 4. End-to-end | Full user flows through a real running app in a real browser | None automated yet — [MANUAL-TEST-CASES.md](MANUAL-TEST-CASES.md) is the checklist for now | Small set of Playwright tests planned for these same critical paths eventually, not full coverage |
 
 Why pglite instead of hitting the real Neon database in tests: real Postgres semantics (enums, CHECK
 constraints, unique indexes) without needing database credentials in CI, and every test starts from a
