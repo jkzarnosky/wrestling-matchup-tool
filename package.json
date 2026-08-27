@@ -16,7 +16,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "gen:synthetic": "tsx scripts/generate-synthetic-data.ts",
-    "seed:admin": "tsx scripts/seed-admin.ts"
+    "seed:admin": "tsx scripts/seed-admin.ts",
+    "demo:reset": "tsx scripts/reset-demo-data.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.0",
