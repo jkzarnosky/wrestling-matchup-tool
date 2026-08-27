@@ -35,3 +35,4 @@ jobs:
           name: Vitest Tests
           path: test-results/junit.xml
           reporter: java-junit
+          use-actions-summary: false

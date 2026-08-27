@@ -67,3 +67,20 @@ something was built a certain way, a tradeoff gets discussed, an adjustment gets
 exchange -- or a distilled version of it -- as an actual `gh pr comment` on that PR. That's the closest
 match to what a team's review thread would actually look like, and where a future reader would go
 looking for it. Applies going forward from 2026-08-25; earlier PRs weren't backfilled.
+
+## Moving issues to "In Progress" when a PR opens
+GitHub's own Project workflow ("Pull request opened" trigger, in the board's Workflows settings) covers
+this for PRs opened against `main`, but does not reliably fire for stacked PRs (a PR whose base is
+another feature branch, not `main`) -- confirmed 2026-08-25 when four stacked PRs only left one issue
+auto-moved. So: after opening a PR (any base branch), move its linked issue(s) to "In Progress"
+directly, rather than relying on the board automation to catch every case.
+
+```bash
+gh project item-edit --project-id PVT_kwHOEJ1UKs4BhVKq --id <ITEM_ID> \
+  --field-id PVTSSF_lAHOEJ1UKs4BhVKqzhgRRqM --single-select-option-id 47fc9ee4
+```
+
+`<ITEM_ID>` is the project item's node id (not the issue number) -- find it with:
+```bash
+gh project item-list 1 --owner jkzarnosky --format json --jq '.items[] | select(.content.number == <ISSUE_NUMBER>) | .id'
+```

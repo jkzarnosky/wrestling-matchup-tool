@@ -21,6 +21,11 @@ export async function listTeams(db: AppDb) {
   return db.select().from(teams).orderBy(teams.name);
 }
 
+export async function getTeamById(db: AppDb, id: number) {
+  const [team] = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
+  return team ?? null;
+}
+
 export async function createTeam(db: AppDb, input: TeamInput) {
   const values = validate(input);
   const [team] = await db.insert(teams).values(values).returning();
