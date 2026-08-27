@@ -8,6 +8,51 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-25] — [MILESTONE] Epic .5: Team Rep base page + Admin base page
+**Shipped:** Logged-in users now land on a real team page at `/team`. A Team Rep always sees their own
+team; an Admin can switch between any team via a dropdown. A Team Rep who tries to view another team's
+page directly by URL is blocked by the server — it never looks up or sends that team's data, not just
+hides a link in the UI. Roster, CSV import, and edit-wrestler are marked "coming soon" on the page,
+since that functionality is Epic 1 and doesn't exist yet.
+
+**Decisions made:**
+- **[DECISION]** Built as one shared page/route for both stories (`/team/[teamId]`, role-aware),
+  rather than two separate pages — the AC for both is nearly identical (same actions, same page shape),
+  just Team Rep is locked to one team and Admin gets a switcher. A second near-duplicate page would
+  just be the same page with the access check removed.
+- **[DECISION]** Shipped as placeholder sections instead of waiting for Epic 1 — the access-control and
+  team-scoping half of these stories (the actually AC-critical, security-relevant part) doesn't depend
+  on Epic 1 at all, so there was no reason to block it. The roster/CSV/edit sections will get filled in
+  once those Epic 1 stories land.
+- **[DECISION]** The team-scoping check (`canViewTeam`) is a small pure function, not logic embedded in
+  the page component — makes it directly unit-testable without needing to render React/Next internals.
+
+**Next up:** Epic 1 — the wrestler data model, CSV import, and add/edit-wrestler UI that these two
+pages are currently placeholder-ing for.
+
+---
+
+## [2026-08-25] — [MILESTONE] Epic .5: Admin invites a user + New user accepts invite
+**Shipped:** An Admin can invite someone by email (as Admin or, for a Team Rep, tied to a specific
+team) from `/admin/invites`. The invited person gets a one-time link; opening it lets them set their
+name and immediately logs them in — no password, ever. The Admin can see which invites are still
+pending versus already accepted. Building the invite flow end to end covered both backlog stories at
+once — the accept-invite piece is exactly what "New user accepts invite" asked for.
+
+**Decisions made:**
+- **[DECISION]** Pending invites live in their own `invites` table rather than as incomplete `users`
+  rows — a `users` row always represents a real, named account. "Pending vs. accepted" is which table
+  a row is in, not an inferred state from a null name. See DECISIONS.md for the alternative considered.
+- **[DECISION]** Invite links expire after 7 days — not specified in the AC (marked TBD), picked as a
+  reasonable default and logged as a judgment call to revisit, same as the login story's numbers.
+- **[DECISION]** Re-inviting an email that already has an account is rejected outright, rather than
+  silently allowed or silently ignored — avoids a confusing state where an invite link exists for
+  someone who can already just log in.
+
+**Next up:** Epic .5 — Team Rep base page.
+
+---
+
 ## [2026-08-25] — [MILESTONE] Epic .5: Admin manages teams
 **Shipped:** An Admin can now create and edit teams (name + conference) through a real page at
 `/admin/teams`. Team Reps and anyone not logged in are blocked from these actions by the server, not

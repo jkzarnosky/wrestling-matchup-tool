@@ -57,6 +57,18 @@ export async function requestLoginCode(db: AppDb, email: string, requestedIp?: s
   await sendLoginCodeEmail(user.email, code);
 }
 
+/** Creates a session for `userId` and returns the signed cookie value to set. Shared by
+ * verifyLoginCode and invite-acceptance (lib/invites.ts) -- both end in "now log them in". */
+export async function createSessionForUser(db: AppDb, userId: number): Promise<string> {
+  const sessionId = randomBytes(32).toString("hex");
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId,
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+  });
+  return signSessionToken(sessionId);
+}
+
 /** Verifies a login code and, if valid, creates a session. Returns the signed cookie value to
  * set, or null if the email/code combination isn't valid. */
 export async function verifyLoginCode(db: AppDb, email: string, code: string): Promise<string | null> {
@@ -74,14 +86,7 @@ export async function verifyLoginCode(db: AppDb, email: string, code: string): P
 
   await db.update(otpCodes).set({ consumedAt: new Date() }).where(eq(otpCodes.id, match.id));
 
-  const sessionId = randomBytes(32).toString("hex");
-  await db.insert(sessions).values({
-    id: sessionId,
-    userId: user.id,
-    expiresAt: new Date(Date.now() + SESSION_TTL_MS),
-  });
-
-  return signSessionToken(sessionId);
+  return createSessionForUser(db, user.id);
 }
 
 /** Resolves a session cookie value to its user, or null if the cookie is missing, tampered
