@@ -35,6 +35,42 @@ unresolved. No GitHub issue exists for it yet.
 
 ---
 
+## 2026-08-27 — Demo: local-only for now, decisions pre-made for hosting later
+
+**Chosen:** no hosted demo yet — `npm run demo:reset` covers local/portfolio needs. Two follow-on
+questions were decided in advance anyway, so they don't need re-litigating whenever hosting happens:
+- **Demo auth:** show the OTP code on-screen instead of wiring real Resend for the demo. Insecure by
+  design (anyone "logging in" sees their own code immediately) but zero email-infrastructure cost, and
+  it's clearly a demo, never how production would behave. Real Resend is the alternative if a more
+  production-faithful demo is wanted later.
+- **Data refresh (once hosted):** scheduled reset (cron), not manual-only — self-healing, so the demo
+  never sits messy for long between whoever last poked at it and the next visitor.
+
+**Why local-only now:** Vercel hosting is free-tier-viable and not much setup, but there's no actual
+audience for a public demo yet — premature to stand up and maintain infrastructure (even low-effort
+infrastructure) for that.
+
+---
+
+## 2026-08-27 — Testing: four tiers, Tier 3 (route-level) added as a new requirement
+
+**Chosen:** unit (pure functions) / integration (pglite-backed lib tests, the primary suite today) /
+route (Next.js route handlers, lib functions mocked out, testing auth gating + response shape) / e2e
+(none automated yet, small set planned for critical paths only). Documented in README.md.
+
+**Why Tier 3 specifically, now:** the "Admin manages teams" PR shipped with an untested 403 check — a
+plain `if` in the route handler that no test touched, caught only because JZ noticed an inconsistent
+checkbox in the PR description, not because anything failed. Route-level tests (mocking the lib layer,
+so they don't re-prove business logic Tier 2 already covers) close exactly that gap. Added to BACKLOG.md's
+Definition of Done for new routes going forward; only one route (`teams`) has one so far, the rest are
+tracked in the Parking Lot.
+
+**Why not full E2E coverage:** Playwright is real setup and CI runtime cost, and most of what it'd catch
+is already caught cheaper at Tier 2/3. A small number of true cross-page flows (login, invite-accept)
+justify it; comprehensive coverage doesn't yet.
+
+---
+
 ## 2026-08-25 — Pending invites: separate table, not nullable columns on users
 
 **Chosen:** a standalone `invites` table (email, role, team_id, token, expires_at, accepted_at). A

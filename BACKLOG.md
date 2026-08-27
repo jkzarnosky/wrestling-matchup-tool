@@ -175,6 +175,10 @@ settles the rest of this list as real decisions, not hypotheticals.
 ## Definition of Done
 - Core business logic (matching engine, import validation, and similar) requires meaningful test
   coverage before a story is considered done — not just "CI passes because there's nothing to fail"
+- New API routes need a Tier 3 (route-level) test covering auth gating and response status codes,
+  not just Tier 2 coverage of the lib function they call — see README.md's Testing section for the
+  pattern (`__tests__/api/teams.test.ts`) and DECISIONS.md for why (a real untested-403 bug shipped
+  in the "Admin manages teams" story before this was a rule)
 - (Add to as it comes up — this is the standing bar for every story, not a one-time checklist)
 
 ## Parking Lot / To Do
@@ -184,8 +188,9 @@ of an epic because it needs its own conversation. Move a row into its epic once 
 | Item | Open Question / Why Tabled | Added |
 |---|---|---|
 | Read-only matchup page | Needs its own AC pass — what exactly does it show (which week, which teams, how a parent finds it), does it need to reflect on-the-spot changes made at the event in real time? | This session |
-| Fill in `RESEND_API_KEY` and `SESSION_SECRET` in `.env.local` | Not needed yet — only required once the login-code email and session-cookie stories are implemented (Epic .5) | 2026-08-25 |
-| Test suite spins up a fresh pglite instance per test (`beforeEach`) | Cheap now (~3.5s for 5 tests), but watch as the DB test suite grows — may need a shared instance + per-test transaction rollback instead of a fresh instance each time, for speed | 2026-08-25 |
+| Test suite spins up a fresh pglite instance per test (`beforeEach`) | Cheap now, but watch as the DB test suite grows — may need a shared instance + per-test transaction rollback instead of a fresh instance each time, for speed | 2026-08-25 |
+| Host a public demo on Vercel | Deferred until there's an actual audience to show it to (local `npm run demo:reset` covers dev/portfolio needs for now). Two follow-on decisions already made for whenever this happens: (1) demo login shows the OTP code on-screen rather than wiring real Resend — revisit real Resend if a more production-like demo is wanted later; (2) data resets on a schedule (cron) once there's something persistent to reset | 2026-08-27 |
+| Add Tier 3 (route-level) tests for the remaining routes | Only `app/api/teams` has one so far (the reference example) — `app/api/invites` and `app/api/auth` still rely on Tier 2 + manual verification only | 2026-08-27 |
 
 ## Priority / Ordering
 Story order in this file **is** the priority order — top to bottom, epic by epic. The GitHub Project
