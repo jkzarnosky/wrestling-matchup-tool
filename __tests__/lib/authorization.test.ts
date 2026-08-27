@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { requireAdmin } from "../../lib/authorization";
+import { canViewTeam, requireAdmin } from "../../lib/authorization";
+
+describe("canViewTeam", () => {
+  it("allows an Admin to view any team", () => {
+    expect(canViewTeam({ role: "admin", teamId: null }, 1)).toBe(true);
+    expect(canViewTeam({ role: "admin", teamId: null }, 999)).toBe(true);
+  });
+
+  it("allows a Team Rep to view their own team", () => {
+    expect(canViewTeam({ role: "team_rep", teamId: 5 }, 5)).toBe(true);
+  });
+
+  it("blocks a Team Rep from viewing another team", () => {
+    expect(canViewTeam({ role: "team_rep", teamId: 5 }, 6)).toBe(false);
+  });
+});
 
 describe("requireAdmin", () => {
   it("rejects no user with 401", () => {
@@ -7,10 +22,10 @@ describe("requireAdmin", () => {
   });
 
   it("rejects a Team Rep with 403", () => {
-    expect(requireAdmin({ role: "team_rep" })).toEqual({ ok: false, status: 403, error: "Admins only." });
+    expect(requireAdmin({ role: "team_rep", teamId: 5 })).toEqual({ ok: false, status: 403, error: "Admins only." });
   });
 
   it("allows an Admin", () => {
-    expect(requireAdmin({ role: "admin" })).toEqual({ ok: true });
+    expect(requireAdmin({ role: "admin", teamId: null })).toEqual({ ok: true });
   });
 });
