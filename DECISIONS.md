@@ -5,6 +5,26 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-08-25 — Pending invites: separate table, not nullable columns on users
+
+**Chosen:** a standalone `invites` table (email, role, team_id, token, expires_at, accepted_at). A
+`users` row is only ever created once an invite is accepted with a real name.
+
+**Alternatives considered:** reuse `users` with `first_name`/`last_name` made nullable, treating a
+null name as "pending." Simpler schema (one table instead of two), but it would loosen a NOT NULL
+constraint the "User data model" story already shipped, and "pending" becomes an implicit state
+(inferred from a null column) instead of an explicit one — the AC explicitly asks to distinguish
+pending vs. active invites, which an explicit table gives for free (which table the row is in) instead
+of encoding it as "name is null."
+
+**Why the table:** keeps `users` as "every row is a real, complete account" — an invariant other code
+(and future stories) can rely on without special-casing partially-set-up users.
+
+**Invite link expiry:** 7 days, picked as a default since BACKLOG.md marks the exact window TBD.
+Revisit if that's wrong in practice.
+
+---
+
 ## 2026-08-25 — Login OTP implementation: thresholds and email enumeration
 
 **Chosen (numbers not specified anywhere in BACKLOG.md, picked as reasonable defaults):**
