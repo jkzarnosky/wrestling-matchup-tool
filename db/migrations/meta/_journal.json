@@ -15,6 +15,13 @@
       "when": 1787673323976,
       "tag": "0001_spooky_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787678345795,
+      "tag": "0002_unusual_vapor",
+      "breakpoints": true
     }
   ]
 }
