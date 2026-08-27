@@ -55,6 +55,36 @@ the repo owner). For any code or doc change:
 This applies to every change, including PROJECT-LOG.md/BACKLOG.md updates and Claude Code's own doc
 edits — there is no "small enough to skip the PR" exception.
 
+## Stacked PRs
+When a story depends on one not yet merged, branch off that PR's branch instead of `main` (stack it),
+rather than waiting. Say so explicitly in the new PR's description (which PR it stacks on, the actual
+merge order).
+
+Branch protection requires `required_linear_history` (squash merges only) for a clean one-commit-per-PR
+audit trail. Squash merges break stacking: a squashed commit has no shared history with the original
+commits still sitting on a stacked branch, so the next branch in the stack shows a conflict even though
+the content is identical (hit repeatedly on 2026-08-25/26). This is expected, not a sign something went
+wrong -- resolve it every time, don't try to avoid it by switching merge strategy (that would cost the
+audit trail for a problem that's cheap to fix per-occurrence).
+
+The routine, once JZ merges a PR that has stacked descendants:
+1. Immediately (don't wait to be asked) checkout the next branch in the stack and `git merge main`.
+2. Resolve any conflict -- so far always PROJECT-LOG.md (two entries inserted at the same point;
+   combine, correct chronological order, drop duplicates) or a shared new file both branches created
+   independently (combine the content, e.g. two functions landing in the same new lib file).
+3. Run `npm test` and `npm run lint`, then push.
+4. Repeat for every remaining branch in the stack, in order, before reporting back.
+5. Check whether the merged PR's linked issues actually closed -- a PR merging into a non-`main` base
+   (the normal case mid-stack, since the next PR up hasn't merged yet) does NOT trigger GitHub's
+   `Closes #N` auto-close, even if the PR text says it. Close them manually once that content actually
+   reaches `main`, or flag it if unsure they're ready to close.
+
+Prefer merging a stack bottom-up (earliest branch first). Merging out of order (e.g. the top of the
+stack before its own base) isn't broken -- GitHub just merges into whatever the base branch is at the
+time -- but it leaves finished work invisible on a feature branch instead of `main`, and its issues
+stay open with no auto-close ever coming. Bottom-up keeps `main`, the board, and issue state honest at
+every step.
+
 ## Moving issues to "In Progress" when a PR opens
 GitHub's own Project workflow ("Pull request opened" trigger, in the board's Workflows settings) covers
 this for PRs opened against `main`, but does not reliably fire for stacked PRs (a PR whose base is
