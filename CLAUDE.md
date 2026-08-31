@@ -1,20 +1,30 @@
 # Project Instructions for Claude Code
 
 ## Maintaining PROJECT-LOG.md
-After completing any epic or story from the backlog (BACKLOG.md), append a new entry to the top of
-PROJECT-LOG.md (just below the header/legend, above the most recent existing entry), following the
-existing format exactly:
+Append a new entry to the top of PROJECT-LOG.md (just below the header/legend, above the most recent
+existing entry) in either of these cases:
 
-- Use today's date.
-- `[MILESTONE]` line: one or two plain-language sentences on what now works. Write for a reader who
-  isn't in this codebase day to day — no unexplained jargon.
+- After completing any epic or story from the backlog (BACKLOG.md).
+- After a substantive decision-making session that ships no story but produces real decisions worth
+  keeping on record — an AC review, an architecture/tooling choice, a scoping change. If a session
+  would earn an entry in DECISIONS.md, it earns a PROJECT-LOG entry too, even with nothing shipped.
+
+Follow the existing format exactly:
+
+- Use today's date, and place the entry in correct chronological order (newest at top) relative to
+  every existing entry — not just appended after whatever currently sits last. If multiple entries
+  share a date, order them by when the work actually happened that day.
+- `[MILESTONE]` line: one or two plain-language sentences on what now works (or, for a decision-only
+  entry, what was decided). Write for a reader who isn't in this codebase day to day — no unexplained
+  jargon.
 - `[DECISION]` bullets: only include real decisions — a choice made between two or more real
   alternatives. Skip this section if nothing decision-worthy came up. Each bullet should name the
   alternative(s) not chosen and why.
 - `Next up`: pull directly from the next unstarted item in BACKLOG.md.
 
-Do not rewrite or reorder existing entries. Do not add an entry for routine work (formatting, minor
-fixes, dependency bumps) — only for backlog items actually completed.
+Do not rewrite or reorder existing entries beyond fixing a genuine misplacement. Do not add an entry
+for routine work (formatting, minor fixes, dependency bumps) — only for backlog items actually
+completed or sessions with real decisions in them.
 
 If unsure whether something is log-worthy, ask before adding an entry rather than guessing.
 
@@ -37,7 +47,9 @@ When JZ says something like "sync the backlog" or "update issues from the backlo
    unmatched stories that need JZ's input.
 
 Never delete or close an issue as part of a sync. Never create a new issue during a sync without
-flagging it first — new issues only get created when JZ explicitly asks for one.
+flagging it first — new issues only get created when JZ explicitly asks for one. This also applies
+outside of a sync — closing or deleting an issue during any other kind of review (e.g. an AC review)
+should be confirmed with JZ in the moment, not just logged after the fact.
 
 When a new story issue is created, set its **Milestone** to the matching epic (e.g. "Epic 1: Data
 Management") — not a label. Milestones group cleanly on the Project board's board view (labels are
