@@ -8,6 +8,32 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-02] — [MILESTONE] Epic 2 AC review: closed 3 stale issues, resolved 2 ambiguities, flagged the real blocker
+**Shipped:** No new app functionality — a review pass over every Epic 2 GitHub issue against BACKLOG.md
+before starting implementation, same as the Epic 1 AC review that preceded that epic's work.
+
+**Decisions made:**
+- **[DECISION]** Closed issues #7, #8, and #9 as superseded — each was a pre-restructure fragment
+  (same-sex preference, outlier flagging, printable sheet) fully covered by #6's consolidated "Generate
+  weekly matchups" AC. Same pattern as closing #2/#3 in Epic 1.
+- **[DECISION]** Fixed issue #28's stale `Epic .5` label to `Epic 2`, keeping its milestone at Epic 2
+  since it can't be built until Epic 2 produces a matchup to display.
+- **[DECISION]** Weight-difference mode (flat lbs vs. percentage) is a per-run choice made by the
+  Hosting Team Rep, not a fixed system-wide setting — consistent with every other threshold on that
+  story. BACKLOG.md's AC updated to say so explicitly.
+- **[DECISION]** Any Team Rep gets full cross-team read access for weekly matchup runs, not just their
+  own team — the only way "Select attending teams" (a Team Rep action per BACKLOG.md) can work at all,
+  since `canViewTeam` currently gives a Rep zero visibility into any other team. Not yet implemented —
+  this decision unblocks scoping the story; the authorization change itself lands with the story. See
+  DECISIONS.md for the two narrower alternatives considered and rejected.
+
+**Next up:** Three real open items before Epic 2 implementation can start: (1) actual default numbers
+for age/skill/weight thresholds and mat count — only JZ has these, (2) whether "number of mats" means
+the printable sheet assigns matches to specific mats, (3) whether a matchup run gets persisted anywhere
+(blocks #28, the public read-only page).
+
+---
+
 ## [2026-08-27] — [MILESTONE] Log hygiene: broadened the PROJECT-LOG trigger rule, fixed an ordering bug
 **Shipped:** No app code — a cross-check of PROJECT-LOG.md against DECISIONS.md (done in the planning
 chat) found a misplaced entry and three decision-only sessions that never got logged, since CLAUDE.md's
