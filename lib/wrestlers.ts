@@ -2,6 +2,7 @@ import Papa from "papaparse";
 import { eq } from "drizzle-orm";
 import { teams, wrestlerHistory, wrestlers } from "../db/schema";
 import type { AppDb } from "../db/types";
+import { calculateAge, MAX_LEAGUE_AGE } from "./age-bracket";
 
 export class ValidationError extends Error {}
 
@@ -58,6 +59,15 @@ function validateWrestlerFields(
   if (birthday.getTime() >= Date.now()) {
     return { reason: `Birthday must be a past date: "${raw.birthday}"` };
   }
+  // No lower bound (a newborn is just "not old enough for a bracket yet", not invalid data) but an
+  // upper bound catches the realistic data-entry error -- a birth year off by a century, or a
+  // parent's/coach's own birthday pasted in by mistake. Ceiling matches the league's oldest bracket.
+  const age = calculateAge(birthday);
+  if (age > MAX_LEAGUE_AGE) {
+    return {
+      reason: `Birthday puts this wrestler at ${age} years old, older than this league's oldest bracket (Intermediate, up to age ${MAX_LEAGUE_AGE}): "${raw.birthday}"`,
+    };
+  }
 
   const weightLbs = Number(raw.weight);
   if (!Number.isFinite(weightLbs) || weightLbs <= 0) {
@@ -102,6 +112,19 @@ export async function importWrestlersFromCsv(
   if (!team) throw new ValidationError("Team not found.");
 
   const parsed = Papa.parse<Record<string, string>>(csvText, { header: true, skipEmptyLines: true });
+
+  // A non-CSV file (image, PDF, etc.) or one with no recognizable columns doesn't throw here --
+  // Papa.parse happily turns whatever text it's given into garbage rows/headers. Left alone, that
+  // would surface as a wall of confusing per-row "missing required field" rejections instead of a
+  // single clear message. Catch it upfront: no data rows at all, or none of the expected columns
+  // present in the header.
+  const REQUIRED_HEADERS = ["team", "first_name", "last_name", "birthday", "weight", "skill_level", "sex"];
+  const hasRecognizableHeader = parsed.meta.fields?.some((field) => REQUIRED_HEADERS.includes(field));
+  if (parsed.data.length === 0 || !hasRecognizableHeader) {
+    throw new ValidationError(
+      "This doesn't look like a valid CSV file -- none of the expected columns (team, first_name, last_name, birthday, weight, skill_level, sex) were found."
+    );
+  }
 
   const existing = await db.select().from(wrestlers).where(eq(wrestlers.teamId, teamId));
   const existingKeys = new Set(
