@@ -35,6 +35,63 @@ stacked-PR routine.
 
 ---
 
+## [2026-08-27] — [MILESTONE] Epic 1: Re-attempting a CSV import
+**Shipped:** Nothing new to build — this story's entire AC (re-running a CSV import skips existing
+wrestlers instead of overwriting them, genuinely new rows still get added, and the summary distinguishes
+why each row didn't get created) was already satisfied by the "Import wrestler roster from CSV" story's
+duplicate-detection design. Added one test making that explicit for the exact scenario the AC describes
+(some rows already on file, one row that isn't) rather than closing on the strength of the single-row
+duplicate test alone.
+
+**Next up:** Epic 1 is done except "Wrestler change history view," which is still `AC: TBD` with no
+GitHub issue — needs a product decision (who can view history, full audit log vs. simplified) before
+it can be scoped. Epic 2 (Weekly Matchmaking Engine) is next up for real work.
+
+---
+
+## [2026-08-27] — [MILESTONE] Epic 1: Add/edit wrestler via UI
+**Shipped:** A team's roster page now has a real form for adding a wrestler by hand and editing an
+existing one in place, no CSV required — same field validation either way (required fields, past
+birthday, positive weight, skill 1-4, sex). Editing a wrestler now writes a real audit trail: exactly
+which field changed, what it was, what it became, who did it, and when.
+
+**Decisions made:**
+- **[DECISION]** Folded the CSV-import form, the roster list, and the new add/edit form into one
+  component (`WrestlerManager`) instead of three separate ones — they all need to refresh the same
+  roster state after any of them succeeds, which is simpler as one shared component than coordinating
+  a refresh signal across three.
+- **[DECISION]** Field validation logic (required fields, birthday/weight/skill/sex rules) is shared
+  between CSV import and the UI form, not duplicated — both call the same internal validator, so a
+  future rule change can't accidentally apply to only one path.
+- **[DECISION]** Team can't be changed via edit — no story asks for moving a wrestler between teams,
+  and adding that silently would be scope no one asked for.
+
+**Next up:** Epic 1 — Re-attempting a CSV import (likely already satisfied by the import story's
+duplicate handling — needs its own review before closing).
+
+---
+
+## [2026-08-27] — [MILESTONE] Epic 1: Import wrestler roster from CSV
+**Shipped:** A team's page now has a working CSV upload for its roster. Every row gets checked
+(required fields, valid past birthday, positive weight, skill level 1-4, sex) and sorted into created /
+skipped-as-duplicate / rejected-invalid, with a reason shown for anything that didn't get created — so
+re-running the same file twice is safe (nothing gets duplicated) instead of something to be careful
+about. The team page's roster section, previously a placeholder, now shows the real list.
+
+**Decisions made:**
+- **[DECISION]** A CSV import is scoped to one target team (whichever team page it's uploaded from) —
+  a row naming a different team is rejected, not routed there. See DECISIONS.md for the reasoning
+  against the alternative (one file spanning multiple teams).
+- **[DECISION]** Age bracket is computed live from birthday, using today's date, not a fixed
+  season-cutoff the way real youth leagues typically do it — a placeholder default logged as needing a
+  real answer before Epic 2 depends on it (see BACKLOG.md Parking Lot).
+- **[DECISION]** Wrestler creation (any path) writes one history marker row, not full field history —
+  matches the "Add/edit wrestler via UI" story's AC so both creation paths behave identically.
+
+**Next up:** Epic 1 — Add/edit wrestler via UI.
+
+---
+
 ## [2026-08-27] — [MILESTONE] Epic 1 AC review: closed 2 stale issues, resolved 3 ambiguities
 **Shipped:** No new app functionality — a review pass over every Epic 1 GitHub issue against
 BACKLOG.md before starting implementation, to catch drift between the two and settle open questions

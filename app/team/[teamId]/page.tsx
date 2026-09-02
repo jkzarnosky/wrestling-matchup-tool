@@ -4,6 +4,7 @@ import { canViewTeam } from "@/lib/authorization";
 import { getCurrentUser } from "@/lib/current-user";
 import { getTeamById, listTeams } from "@/lib/teams";
 import { TeamSelector } from "./TeamSelector";
+import { WrestlerManager } from "./WrestlerManager";
 
 export default async function TeamPage({ params }: { params: Promise<{ teamId: string }> }) {
   const user = await getCurrentUser();
@@ -41,20 +42,7 @@ export default async function TeamPage({ params }: { params: Promise<{ teamId: s
 
       {allTeams && <TeamSelector teams={allTeams} currentTeamId={team.id} />}
 
-      <section>
-        <h2>Roster</h2>
-        <p>Coming soon -- Epic 1 (wrestler data model).</p>
-      </section>
-
-      <section>
-        <h2>Import roster from CSV</h2>
-        <p>Coming soon -- Epic 1.</p>
-      </section>
-
-      <section>
-        <h2>Edit wrestler</h2>
-        <p>Coming soon -- Epic 1.</p>
-      </section>
+      <WrestlerManager teamId={team.id} />
     </main>
   );
 }

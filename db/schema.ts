@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, date, integer, pgEnum, pgTable, real, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "team_rep"]);
 
@@ -75,3 +75,56 @@ export const invites = pgTable(
     ),
   ]
 );
+
+export const sexEnum = pgEnum("sex", ["M", "F"]);
+
+export const wrestlers = pgTable(
+  "wrestlers",
+  {
+    id: serial("id").primaryKey(),
+    teamId: integer("team_id")
+      .notNull()
+      .references(() => teams.id),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    birthday: date("birthday", { mode: "date" }).notNull(),
+    weightLbs: real("weight_lbs").notNull(),
+    skillLevel: integer("skill_level").notNull(), // 1 = expert ... 4 = first-year, do not invert
+    sex: sexEnum("sex").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Duplicate rule from the CSV-import AC: same team + name + birthday is the same wrestler.
+    uniqueIndex("wrestlers_team_name_birthday_unique").on(
+      table.teamId,
+      table.firstName,
+      table.lastName,
+      table.birthday
+    ),
+    check("wrestlers_weight_positive", sql`${table.weightLbs} > 0`),
+    check("wrestlers_skill_level_range", sql`${table.skillLevel} BETWEEN 1 AND 4`),
+  ]
+);
+
+export const wrestlerHistoryActionEnum = pgEnum("wrestler_history_action", [
+  "created_via_import",
+  "created_via_ui",
+  "edited",
+]);
+
+// Creation (either path) writes one marker row, not per-field history -- see DECISIONS.md. Edits
+// write one row per changed field (field/oldValue/newValue set; null on marker rows).
+export const wrestlerHistory = pgTable("wrestler_history", {
+  id: serial("id").primaryKey(),
+  wrestlerId: integer("wrestler_id")
+    .notNull()
+    .references(() => wrestlers.id),
+  action: wrestlerHistoryActionEnum("action").notNull(),
+  field: text("field"),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  changedBy: integer("changed_by")
+    .notNull()
+    .references(() => users.id),
+  changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+});
