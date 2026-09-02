@@ -8,6 +8,33 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-08-27] — [MILESTONE] Log hygiene: broadened the PROJECT-LOG trigger rule, fixed an ordering bug
+**Shipped:** No app code — a cross-check of PROJECT-LOG.md against DECISIONS.md (done in the planning
+chat) found a misplaced entry and three decision-only sessions that never got logged, since CLAUDE.md's
+old rule only triggered an entry after a shipped story. Fixed both, and tightened the rule itself so
+this doesn't keep happening.
+
+**Decisions made:**
+- **[DECISION]** CLAUDE.md's trigger for a PROJECT-LOG entry now also covers "a substantive
+  decision-making session that ships no story" (an AC review, an architecture/tooling choice, a scoping
+  change) — anything that would already earn a DECISIONS.md entry earns a PROJECT-LOG one too. The old
+  "only after a shipped story" rule was already being applied inconsistently (the very first "Product
+  planning" entry from 2026-08-24 was decision-only and got logged anyway), and it was exactly the
+  decision-only sessions — the AC review, the testing-tiers writeup, the demo-hosting call — that kept
+  falling through the cracks despite being good interview material.
+- **[DECISION]** "User data model" (dated 2026-08-25) was sitting at the very bottom of the log, below
+  two 2026-08-24 entries — it had been appended after whatever the last entry happened to be instead of
+  placed in correct chronological order. Moved to its correct position: oldest of the 2026-08-25
+  entries, immediately before "Login via emailed one-time code" (which depends on the data model
+  existing). CLAUDE.md now says explicitly to place new entries in true chronological order, not just
+  prepend them.
+
+**Next up:** Review and merge the three open Epic 1 PRs (#46, #47, #48); once merged, their own
+PROJECT-LOG entries will need restacking into correct date order alongside this fix, per the usual
+stacked-PR routine.
+
+---
+
 ## [2026-08-27] — [MILESTONE] Epic 1: Re-attempting a CSV import
 **Shipped:** Nothing new to build — this story's entire AC (re-running a CSV import skips existing
 wrestlers instead of overwriting them, genuinely new rows still get added, and the summary distinguishes
@@ -62,6 +89,63 @@ about. The team page's roster section, previously a placeholder, now shows the r
   matches the "Add/edit wrestler via UI" story's AC so both creation paths behave identically.
 
 **Next up:** Epic 1 — Add/edit wrestler via UI.
+
+---
+
+## [2026-08-27] — [MILESTONE] Epic 1 AC review: closed 2 stale issues, resolved 3 ambiguities
+**Shipped:** No new app functionality — a review pass over every Epic 1 GitHub issue against
+BACKLOG.md before starting implementation, to catch drift between the two and settle open questions
+before code gets written against them.
+
+**Decisions made:**
+- **[DECISION]** Closed issues #2 and #3 as superseded — #2's scope was already fully covered by
+  issue #1's current AC (bad-row handling, validation, invalid-row report); #3's title matched Epic 2
+  scope, not Epic 1, and never had AC to begin with. Both predated the BACKLOG.md restructure and were
+  never updated to match it.
+- **[DECISION]** CSV team-name matching is trimmed and case-insensitive, not byte-exact — an exact
+  match would reject a real coach's spreadsheet over a stray space or capitalization difference, for
+  no real benefit.
+- **[DECISION]** Admin can CSV-import and add/edit wrestlers for any team, not just their own —
+  consistent with the team-selector already shipped on the Admin base page; made explicit in the
+  stories' AC rather than left as an assumption to rediscover during implementation.
+- **[DECISION]** Wrestler creation (via CSV or UI) gets a "created via import/UI" marker only, not
+  full field-by-field history, on both paths — CSV import already said so explicitly; UI creation is
+  now made to match rather than silently differing.
+
+**Next up:** Begin Epic 1 implementation — wrestler data model and CSV import.
+
+---
+
+## [2026-08-27] — [MILESTONE] Decision: no hosted demo yet
+**Shipped:** No code — a decision to stay local-only for now (`npm run demo:reset` covers dev/
+portfolio needs) rather than standing up hosting before there's an actual audience to show it to.
+
+**Decisions made:**
+- **[DECISION]** Whenever a hosted demo does happen, it shows the OTP code on-screen instead of
+  wiring real Resend email — zero email-infrastructure cost for something that's clearly a demo; real
+  Resend is the fallback if a more production-faithful demo is wanted later.
+- **[DECISION]** Once hosted, demo data resets on a schedule (cron), not manual-only, so it never sits
+  messy for long between whoever last poked at it and the next visitor.
+
+**Next up:** Revisit hosting once there's a real audience; continue Epic 1 implementation meanwhile.
+
+---
+
+## [2026-08-27] — [MILESTONE] Testing strategy formalized into four tiers; Tier 3 added as a new requirement
+**Shipped:** No new feature — the testing approach already in use (unit + pglite-backed integration
+tests) was written down explicitly in README.md, alongside two additions: route-level tests (auth
+gating, response codes) and a small, deliberately limited set of e2e tests for critical flows only.
+
+**Decisions made:**
+- **[DECISION]** Added Tier 3 (route-level) after the "Admin manages teams" PR shipped with an
+  untested `403` check — a plain `if` in the route handler that nothing touched, caught only because
+  JZ noticed a mismatched checkbox in the PR description, not because a test failed. Route-level tests
+  close that specific gap without re-proving business logic Tier 2 already covers.
+- **[DECISION]** Not pursuing full E2E coverage — Playwright is real setup and CI-runtime cost, and
+  most of what it would catch is already caught cheaper at Tier 2/3. A small number of true cross-page
+  flows (login, invite-accept) justify it; comprehensive coverage doesn't yet.
+
+**Next up:** Add Tier 3 tests to the remaining routes (only `teams` has one so far); continue Epic 1.
 
 ---
 
@@ -150,13 +234,21 @@ rejected, not just the happy path.
 
 ---
 
-## [YYYY-MM-DD] — [MILESTONE] <Epic/story name>
-**Shipped:** one or two sentences on what actually works now.
+## [2026-08-25] — [MILESTONE] Epic .5: User data model
+**Shipped:** The database now has real tables for teams and user accounts (Admin or Team Rep), with a
+database-level rule that an Admin never has a team assigned and a Team Rep always does — that rule can't
+be bypassed by a bug in the app code later. The first Admin account (JZ) is seeded directly rather than
+through the not-yet-built invite flow, and re-running that seed script is safe (won't create a duplicate).
 
 **Decisions made:**
-- **[DECISION]** <the call> — <why, in a sentence or two; what was the alternative and why not>
+- **[DECISION]** The Admin/Team-Rep team-assignment rule is enforced with a database CHECK constraint,
+  not just application code — a bug in a future feature can't silently violate it, since Postgres itself
+  rejects the bad row.
+- **[DECISION]** Schema/constraint tests run against an in-memory Postgres (pglite) built from the real
+  generated migration file, instead of against the live Neon database — same real Postgres behavior
+  (enums, constraints, unique indexes), but deterministic in CI with no database credentials needed.
 
-**Next up:** what's being pulled off the backlog next.
+**Next up:** Epic .5 — Admin manages teams.
 
 ---
 
@@ -178,8 +270,10 @@ the existing GitHub issues.
 - **[DECISION]** A Team entity (name + conference) was missing from scope entirely — added as its own
   story, ordered ahead of both the invite flow and CSV import, since both depend on a team already
   existing.
-- **[DECISION]** Priority/ordering lives on the GitHub Project board, not duplicated as a list in
-  BACKLOG.md — avoids the two drifting out of sync. BACKLOG.md owns scope/AC; the board owns sequence.
+- **[DECISION]** Priority/ordering was initially assigned to the GitHub Project board rather than
+  BACKLOG.md, to avoid the two drifting out of sync. (Superseded 2026-08-24, implementation session —
+  board card position turned out not to be readable via the GitHub API, so BACKLOG.md's file order
+  became the actual source of truth instead. See DECISIONS.md.)
 - **[DECISION]** This will be deployed live for the league to actually use, not left as a local-only/
   repo-only project — settles hosting, DB, email delivery, session handling, and rate limiting as real
   open decisions (tracked in BACKLOG.md) rather than deferred indefinitely.
@@ -209,24 +303,6 @@ checklist in a file.
 
 **Next up:** Epic 1 — Data Ingestion, starting with CSV import of a wrestler roster (Sprint 1 plan:
 data model + CSV import/validation before touching the matching algorithm or any UI).
-
----
-
-## [2026-08-25] — [MILESTONE] Epic .5: User data model
-**Shipped:** The database now has real tables for teams and user accounts (Admin or Team Rep), with a
-database-level rule that an Admin never has a team assigned and a Team Rep always does — that rule can't
-be bypassed by a bug in the app code later. The first Admin account (JZ) is seeded directly rather than
-through the not-yet-built invite flow, and re-running that seed script is safe (won't create a duplicate).
-
-**Decisions made:**
-- **[DECISION]** The Admin/Team-Rep team-assignment rule is enforced with a database CHECK constraint,
-  not just application code — a bug in a future feature can't silently violate it, since Postgres itself
-  rejects the bad row.
-- **[DECISION]** Schema/constraint tests run against an in-memory Postgres (pglite) built from the real
-  generated migration file, instead of against the live Neon database — same real Postgres behavior
-  (enums, constraints, unique indexes), but deterministic in CI with no database credentials needed.
-
-**Next up:** Epic .5 — Admin manages teams.
 
 ---
 
