@@ -191,6 +191,7 @@ of an epic because it needs its own conversation. Move a row into its epic once 
 | Test suite spins up a fresh pglite instance per test (`beforeEach`) | Cheap now, but watch as the DB test suite grows — may need a shared instance + per-test transaction rollback instead of a fresh instance each time, for speed | 2026-08-25 |
 | Host a public demo on Vercel | Deferred until there's an actual audience to show it to (local `npm run demo:reset` covers dev/portfolio needs for now). Two follow-on decisions already made for whenever this happens: (1) demo login shows the OTP code on-screen rather than wiring real Resend — revisit real Resend if a more production-like demo is wanted later; (2) data resets on a schedule (cron) once there's something persistent to reset | 2026-08-27 |
 | Add Tier 3 (route-level) tests for the remaining routes | Only `app/api/teams` has one so far (the reference example) — `app/api/invites` and `app/api/auth` still rely on Tier 2 + manual verification only | 2026-08-27 |
+| CSV import history | Import results (created/duplicate/invalid counts + per-row reasons) are only ever shown once, in the browser, right after the upload — nothing is persisted. Navigate away or refresh and it's gone; no way to look up what happened on a past import. Possibly folds into "Wrestler change history view" once that story gets scoped, rather than being its own thing | 2026-08-27 |
 
 ## Priority / Ordering
 Story order in this file **is** the priority order — top to bottom, epic by epic. The GitHub Project
