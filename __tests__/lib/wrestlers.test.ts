@@ -63,8 +63,10 @@ describe("importWrestlersFromCsv", () => {
     ["unparseable birthday", `${teamPlaceholder()},Sam,Rep,not-a-date,55,3,M`, "Invalid birthday"],
     ["future birthday", `${teamPlaceholder()},Sam,Rep,2099-01-01,55,3,M`, "must be a past date"],
     ["non-positive weight", `${teamPlaceholder()},Sam,Rep,2018-03-20,0,3,M`, "Invalid weight"],
+    ["non-numeric weight", `${teamPlaceholder()},Sam,Rep,2018-03-20,abc,3,M`, "Invalid weight"],
     ["out-of-range skill_level", `${teamPlaceholder()},Sam,Rep,2018-03-20,55,5,M`, "Invalid skill_level"],
     ["invalid sex", `${teamPlaceholder()},Sam,Rep,2018-03-20,55,3,X`, "Invalid sex"],
+    ["birthday older than the league's oldest bracket", `${teamPlaceholder()},Sam,Rep,1850-01-01,55,3,M`, "older than this league's oldest bracket"],
   ])("rejects a row with %s", async (_label, rowTemplate, expectedReasonSubstring) => {
     const { team, admin } = await setup(db);
     const row = rowTemplate.replace(teamPlaceholder(), team.name);
@@ -73,6 +75,41 @@ describe("importWrestlersFromCsv", () => {
     const summary = await importWrestlersFromCsv(db, team.id, csv, admin.id);
     expect(summary).toMatchObject({ createdCount: 0, invalidCount: 1 });
     expect(summary.rows[0].reason).toContain(expectedReasonSubstring);
+  });
+
+  it("trims leading/trailing whitespace on every field", async () => {
+    const { team, admin } = await setup(db);
+    const csv = `${HEADER}\n  ${team.name}  , Sam , Rep ,  2018-03-20  , 55 , 3 , M `;
+
+    const summary = await importWrestlersFromCsv(db, team.id, csv, admin.id);
+    expect(summary.createdCount).toBe(1);
+
+    const roster = await listWrestlers(db, team.id);
+    expect(roster[0]).toMatchObject({ firstName: "Sam", lastName: "Rep", weightLbs: 55, skillLevel: 3, sex: "M" });
+  });
+
+  it("rejects a malformed row missing a trailing column entirely, not just an empty value", async () => {
+    const { team, admin } = await setup(db);
+    // Row ends after `weight` -- skill_level and sex are simply absent (undefined), not "".
+    const csv = `${HEADER}\n${team.name},Sam,Rep,2018-03-20,55`;
+
+    const summary = await importWrestlersFromCsv(db, team.id, csv, admin.id);
+    expect(summary).toMatchObject({ createdCount: 0, invalidCount: 1 });
+    expect(summary.rows[0].reason).toContain("Missing required field");
+  });
+
+  it("rejects a file with no recognizable CSV columns, instead of a wall of per-row errors", async () => {
+    const { team, admin } = await setup(db);
+    const notACsv = "%PDF-1.4\nsome binary garbage here\nnot,csv,columns,at,all";
+
+    await expect(importWrestlersFromCsv(db, team.id, notACsv, admin.id)).rejects.toThrow(
+      /doesn't look like a valid CSV/
+    );
+  });
+
+  it("rejects an empty file", async () => {
+    const { team, admin } = await setup(db);
+    await expect(importWrestlersFromCsv(db, team.id, "", admin.id)).rejects.toThrow(ValidationError);
   });
 
   it("rejects a duplicate within the same file", async () => {

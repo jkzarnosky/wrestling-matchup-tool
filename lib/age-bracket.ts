@@ -1,11 +1,16 @@
 export type AgeBracket = "Tots" | "Bantams" | "Midget" | "Junior" | "Intermediate";
 
+// Intermediate is the league's oldest bracket -- also used by lib/wrestlers.ts as the age ceiling
+// for CSV import / add-wrestler validation, so a birthday that couldn't belong to any bracket is
+// rejected rather than silently accepted. Single source of truth to avoid the two drifting apart.
+export const MAX_LEAGUE_AGE = 13;
+
 const BRACKETS: { name: AgeBracket; minAge: number; maxAge: number }[] = [
   { name: "Tots", minAge: 4, maxAge: 6 },
   { name: "Bantams", minAge: 7, maxAge: 8 },
   { name: "Midget", minAge: 9, maxAge: 10 },
   { name: "Junior", minAge: 11, maxAge: 12 },
-  { name: "Intermediate", minAge: 13, maxAge: 13 },
+  { name: "Intermediate", minAge: 13, maxAge: MAX_LEAGUE_AGE },
 ];
 
 /** Whole years old as of `asOf` (defaults to now). Not stored anywhere -- always derived from
