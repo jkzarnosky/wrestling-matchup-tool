@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { teams, users, wrestlerHistory, wrestlers } from "../../db/schema";
 import { createTestDb } from "../db/test-db";
-import { ValidationError, importWrestlersFromCsv, listWrestlers } from "../../lib/wrestlers";
+import { ValidationError, createWrestler, importWrestlersFromCsv, listWrestlers, updateWrestler } from "../../lib/wrestlers";
 
 type TestDb = Awaited<ReturnType<typeof createTestDb>>;
 
@@ -103,3 +103,85 @@ describe("importWrestlersFromCsv", () => {
 function teamPlaceholder(): string {
   return "__TEAM__";
 }
+
+const validInput = { first_name: "Sam", last_name: "Rep", birthday: "2018-03-20", weight: "55", skill_level: "3", sex: "M" };
+
+describe("createWrestler", () => {
+  let db: TestDb;
+
+  beforeEach(async () => {
+    db = await createTestDb();
+  });
+
+  it("creates a wrestler and writes a created_via_ui marker (not full field history)", async () => {
+    const { team, admin } = await setup(db);
+    const wrestler = await createWrestler(db, team.id, validInput, admin.id);
+
+    expect(wrestler).toMatchObject({ firstName: "Sam", lastName: "Rep", weightLbs: 55, skillLevel: 3, sex: "M" });
+
+    const history = await db.select().from(wrestlerHistory).where(eq(wrestlerHistory.wrestlerId, wrestler.id));
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({ action: "created_via_ui", field: null, changedBy: admin.id });
+  });
+
+  it("rejects invalid input with the same validation as CSV import", async () => {
+    const { team, admin } = await setup(db);
+    await expect(createWrestler(db, team.id, { ...validInput, skill_level: "9" }, admin.id)).rejects.toThrow(
+      ValidationError
+    );
+  });
+
+  it("rejects a duplicate on the same team", async () => {
+    const { team, admin } = await setup(db);
+    await createWrestler(db, team.id, validInput, admin.id);
+    await expect(createWrestler(db, team.id, validInput, admin.id)).rejects.toThrow(ValidationError);
+  });
+});
+
+describe("updateWrestler", () => {
+  let db: TestDb;
+
+  beforeEach(async () => {
+    db = await createTestDb();
+  });
+
+  it("updates fields and writes one history row per changed field", async () => {
+    const { team, admin } = await setup(db);
+    const wrestler = await createWrestler(db, team.id, validInput, admin.id);
+
+    const updated = await updateWrestler(db, wrestler.id, { ...validInput, weight: "60", skill_level: "2" }, admin.id);
+    expect(updated).toMatchObject({ weightLbs: 60, skillLevel: 2 });
+
+    const history = await db
+      .select()
+      .from(wrestlerHistory)
+      .where(eq(wrestlerHistory.wrestlerId, wrestler.id));
+    const edits = history.filter((h) => h.action === "edited");
+    expect(edits).toHaveLength(2);
+    expect(edits.map((e) => e.field).sort()).toEqual(["skillLevel", "weightLbs"]);
+    expect(edits.find((e) => e.field === "weightLbs")).toMatchObject({ oldValue: "55", newValue: "60" });
+  });
+
+  it("writes no history row when nothing actually changed", async () => {
+    const { team, admin } = await setup(db);
+    const wrestler = await createWrestler(db, team.id, validInput, admin.id);
+
+    await updateWrestler(db, wrestler.id, validInput, admin.id);
+
+    const history = await db.select().from(wrestlerHistory).where(eq(wrestlerHistory.wrestlerId, wrestler.id));
+    expect(history.filter((h) => h.action === "edited")).toHaveLength(0);
+  });
+
+  it("throws for a nonexistent wrestler", async () => {
+    const { admin } = await setup(db);
+    await expect(updateWrestler(db, 999, validInput, admin.id)).rejects.toThrow(ValidationError);
+  });
+
+  it("rejects invalid input", async () => {
+    const { team, admin } = await setup(db);
+    const wrestler = await createWrestler(db, team.id, validInput, admin.id);
+    await expect(updateWrestler(db, wrestler.id, { ...validInput, sex: "X" }, admin.id)).rejects.toThrow(
+      ValidationError
+    );
+  });
+});
