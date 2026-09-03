@@ -8,6 +8,24 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-03] — [MILESTONE] Epic 2: Select attending teams for the week
+**Shipped:** The first real Epic 2 feature — a Hosting Team Rep (or Admin) can start a new weekly
+matchup run by picking 2–4 attending teams from the full league, not just their own team. The run gets
+a real page (`/matchups/[runId]`) showing who's attending; thresholds and match generation are next.
+
+**Decisions made:**
+- **[DECISION]** Added `matchup_runs` + a `matchup_run_teams` join table now, built incrementally as
+  later Epic 2 stories ship, rather than shipping this story ephemeral (client-side only) and reworking
+  it once persistence became unavoidable for "Generate weekly matchups" / the public read-only page.
+- **[DECISION]** The 2-4 team count rule is application-level validation (`lib/matchup-runs.ts`), not a
+  DB `CHECK` — Postgres can't cheaply express "this many related rows exist" as a column constraint.
+- **[DECISION]** No team-scoping authorization gate on the new routes — any logged-in user can select
+  any team to attend, per the Epic 2 AC review's cross-team read-access call.
+
+**Next up:** Epic 2 — Configure weekly matching thresholds (#5), building on this run.
+
+---
+
 ## [2026-09-03] — [MILESTONE] Weekly matching threshold defaults confirmed
 **Shipped:** No app code — closed the one real blocker the Epic 2 AC review flagged. "Configure weekly
 matching thresholds" (issue #5) now has actual default numbers instead of an open placeholder.
