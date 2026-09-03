@@ -120,7 +120,7 @@ Simplifies the invite flow too — accepting an invite just confirms identity, n
 
 ### Story: Configure weekly matching thresholds
 **AC:**
-- Hosting Team Rep sets, per run: allowable age difference, allowable skill-level difference, allowable weight difference (flat lbs or %), number of mats (varies week to week, entered each time)
+- Hosting Team Rep sets, per run: allowable age difference, allowable skill-level difference, allowable weight difference (Rep chooses flat lbs or percentage each run — not a fixed system-wide mode), number of mats (varies week to week, entered each time)
 - Current tool's existing values should be used as sensible defaults — confirm exact numbers before building (open item)
 
 ### Story: Generate weekly matchups
@@ -193,6 +193,8 @@ of an epic because it needs its own conversation. Move a row into its epic once 
 | Add Tier 3 (route-level) tests for the remaining routes | `app/api/teams` and `app/api/teams/[id]/wrestlers*` have them now — `app/api/invites` and `app/api/auth` still rely on Tier 2 + manual verification only | 2026-08-27 |
 | Age bracket cutoff date | Currently computed from live current age (see DECISIONS.md), not a fixed season cutoff. Real youth leagues typically use a cutoff (e.g. "age as of Jan 1") specifically so kids don't change brackets mid-season — needs a real answer before Epic 2 (matchmaking) depends on brackets for real | 2026-08-27 |
 | CSV import history | Import results (created/duplicate/invalid counts + per-row reasons) are only ever shown once, in the browser, right after the upload — nothing is persisted. Navigate away or refresh and it's gone; no way to look up what happened on a past import. Possibly folds into "Wrestler change history view" once that story gets scoped, rather than being its own thing | 2026-08-27 |
+| Matchup run persistence | Nothing in the current data model represents a "weekly matchup run" — no table for the thresholds used, teams selected, or results produced. Needed before "Generate weekly matchups" can do anything beyond a single in-memory response, and a hard blocker for "Read-only matchup page" (row above), which needs something persisted to actually read | 2026-09-02 |
+| Mat assignment scope | "Configure weekly matching thresholds" AC lists "number of mats" as an input, but doesn't say whether "Generate weekly matchups" actually assigns each match to a specific mat on the printable sheet, or if mat count is purely a capacity constraint with no output mapping | 2026-09-02 |
 
 ## Priority / Ordering
 Story order in this file **is** the priority order — top to bottom, epic by epic. The GitHub Project

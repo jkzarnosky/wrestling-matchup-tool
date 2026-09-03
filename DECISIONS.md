@@ -5,6 +5,48 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-02 — Epic 2 AC review: closed 3 stale issues, resolved 2 ambiguities, flagged the real blocker
+
+Reviewed all Epic 2 GitHub issues against BACKLOG.md before starting implementation (same pass as the
+Epic 1 AC review). BACKLOG.md defines only 3 real Epic 2 stories; GitHub had 7 issues under the
+milestone.
+
+**Closed #7, #8, and #9 as superseded.** Each was a pre-restructure fragment (same-sex preference,
+outlier flagging, printable sheet, respectively) whose scope is now fully covered by #6's consolidated
+"Generate weekly matchups" AC. Same pattern as closing #2/#3 in Epic 1.
+
+**Fixed #28's stale Epic label.** Its body said `Epic: Epic .5: User Management` while its milestone
+said Epic 2; left the milestone as Epic 2 (it can't actually be built until Epic 2 produces a matchup to
+display, so grouping it there matches real dependency order) and corrected the body text to match.
+
+**Weight-difference mode is a per-run choice, not a fixed system-wide setting.** The Hosting Team Rep
+picks flat lbs or percentage each time they configure a run, consistent with every other threshold on
+that story being set "per run." BACKLOG.md's AC for "Configure weekly matching thresholds" now says so
+explicitly instead of leaving `(flat lbs or %)` ambiguous about who chooses and when.
+
+**Cross-team read access: any Team Rep gets full read access to any team's roster, not just their own.**
+"Select attending teams for the week" requires a "Hosting Team Rep" to see and pick from other teams'
+rosters, but `canViewTeam` (lib/authorization.ts) currently only allows Admin-any-team / Rep-own-team-
+only — a Team Rep has zero visibility into any other team today. Two narrower alternatives were
+considered and rejected: (1) Admin-only for weekly matchup runs, dropping the "Hosting Team Rep"
+language entirely — rejected because BACKLOG.md's AC explicitly names the Team Rep as the actor running
+this, not the Admin; (2) a contextual grant scoped to just the teams a Rep has selected as attending —
+rejected as real extra implementation complexity (a new authorization concept, not just reusing
+`canViewTeam`) for a case where the league is small enough that any-team read access isn't a meaningful
+exposure. **Not yet implemented** — `canViewTeam` still reflects the Epic 1 rule; this decision just
+unblocks scoping the story, the actual authorization change lands with the story's implementation.
+
+**Still open, deliberately not resolved in this pass:**
+- Threshold defaults ("current tool's existing values") — real numbers only JZ has, not something to
+  guess at.
+- Whether "number of mats" implies the printable sheet assigns each match to a specific mat, or is
+  purely a capacity input with no output mapping.
+- Whether a matchup run (thresholds used + results) gets persisted anywhere — same shape as the
+  CSV-import-history Parking Lot gap from Epic 1, and a hard blocker for #28 (the public page needs
+  something to read).
+
+---
+
 ## 2026-09-02 — CSV/add-wrestler validation hardening: age ceiling, non-CSV upload, sentinel strings
 
 JZ asked for a review of CSV field validation against a specific list of edge cases (whitespace, nulls,
