@@ -70,3 +70,4 @@ Login codes aren't emailed in local dev — they print to the terminal running `
 
 If any of these don't match "Expect," that's a real bug — file it as a GitHub issue before moving on,
 don't just make a mental note.
+
