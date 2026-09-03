@@ -5,6 +5,22 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-03 — Weekly matching threshold defaults: ±1 year age, ±1 skill level, ±10% weight
+
+Closes the one real blocker the Epic 2 AC review flagged: "Configure weekly matching thresholds" (issue
+#5) called for "the current tool's existing values" as defaults but didn't say what they were. JZ
+supplied real numbers rather than the alternative discussed — shipping the fields blank/required with
+validation-only and no defaults at all (which would have been a legitimate, simpler option; mat count
+already works that way since it varies too much week to week for a default to mean anything). Defaults
+still apply per-run, not system-wide — the Hosting Team Rep can always override them for a given week;
+they exist purely to give a new/less experienced Rep a sensible starting point instead of a blank guess.
+
+**Chosen:** ±1 year age difference, ±1 skill-level difference, ±10% weight difference (the weight
+field's flat-lbs-vs-percentage toggle — see the Epic 2 AC review entry below — defaults to percentage
+mode to match).
+
+---
+
 ## 2026-09-02 — Epic 2 AC review: closed 3 stale issues, resolved 2 ambiguities, flagged the real blocker
 
 Reviewed all Epic 2 GitHub issues against BACKLOG.md before starting implementation (same pass as the
