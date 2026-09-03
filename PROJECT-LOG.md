@@ -8,6 +8,22 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-03] — [MILESTONE] Weekly matching threshold defaults confirmed
+**Shipped:** No app code — closed the one real blocker the Epic 2 AC review flagged. "Configure weekly
+matching thresholds" (issue #5) now has actual default numbers instead of an open placeholder.
+
+**Decisions made:**
+- **[DECISION]** Defaults: ±1 year age difference, ±1 skill-level difference, ±10% weight difference —
+  all editable per run, not fixed. Chosen over the alternative of shipping the fields blank/required
+  with no defaults at all (a legitimate simpler option, discussed and set aside since a new/less
+  experienced Hosting Rep benefits from a sensible starting point). Mat count still has no default —
+  it varies too much week to week for one to mean anything.
+
+**Next up:** Epic 2 implementation can now start for real — "Select attending teams for the week" (#4)
+is the natural first story, since the other two stories depend on teams already being selected.
+
+---
+
 ## [2026-09-02] — [MILESTONE] Epic 2 AC review: closed 3 stale issues, resolved 2 ambiguities, flagged the real blocker
 **Shipped:** No new app functionality — a review pass over every Epic 2 GitHub issue against BACKLOG.md
 before starting implementation, same as the Epic 1 AC review that preceded that epic's work.

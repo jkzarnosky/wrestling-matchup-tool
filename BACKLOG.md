@@ -121,7 +121,11 @@ Simplifies the invite flow too — accepting an invite just confirms identity, n
 ### Story: Configure weekly matching thresholds
 **AC:**
 - Hosting Team Rep sets, per run: allowable age difference, allowable skill-level difference, allowable weight difference (Rep chooses flat lbs or percentage each run — not a fixed system-wide mode), number of mats (varies week to week, entered each time)
-- Current tool's existing values should be used as sensible defaults — confirm exact numbers before building (open item)
+- Fields pre-fill with sensible defaults (below) but are all editable per run — none are hardcoded/fixed
+- Default allowable age difference: ±1 year
+- Default allowable skill-level difference: ±1 level
+- Default allowable weight difference: ±10% (the "flat lbs or %" choice above defaults to percentage mode)
+- Number of mats has no default — always entered fresh each run (varies too much week to week for a default to mean anything)
 
 ### Story: Generate weekly matchups
 **AC:**
