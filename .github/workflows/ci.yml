@@ -23,6 +23,11 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
+          # predicate-quantifier: every is required for the negation below to actually exclude
+          # anything -- the default ('some'/OR) would let the bare '**' pattern alone match every
+          # file, silently making '!**/*.md' a no-op (caught by a live smoke-test PR before this
+          # was trusted).
+          predicate-quantifier: every
           filters: |
             code:
               - '**'
