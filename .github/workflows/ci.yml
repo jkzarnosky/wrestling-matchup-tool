@@ -15,24 +15,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # `test` is the required status check on main (branch protection), so this job must always
+      # run and report a status -- skipping it entirely for doc-only changes via a top-level
+      # `paths-ignore` would leave that check permanently "waiting" and block the PR forever.
+      # Instead, gate the expensive steps below on whether anything besides Markdown changed.
+      - name: Detect code changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          # predicate-quantifier: every is required for the negation below to actually exclude
+          # anything -- the default ('some'/OR) would let the bare '**' pattern alone match every
+          # file, silently making '!**/*.md' a no-op (caught by a live smoke-test PR before this
+          # was trusted).
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!**/*.md'
       - uses: actions/setup-node@v4
+        if: steps.filter.outputs.code == 'true'
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+        if: steps.filter.outputs.code == 'true'
       - run: npm run lint
+        if: steps.filter.outputs.code == 'true'
       - run: npm test
+        if: steps.filter.outputs.code == 'true'
       - name: Upload JUnit test report
-        if: always()
+        if: always() && steps.filter.outputs.code == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: junit-test-report
           path: test-results/junit.xml
       - name: Publish test report
-        if: always()
+        if: always() && steps.filter.outputs.code == 'true'
         uses: dorny/test-reporter@v1
         with:
           name: Vitest Tests
           path: test-results/junit.xml
           reporter: java-junit
           use-actions-summary: false
+      - name: No code changes
+        if: steps.filter.outputs.code == 'false'
+        run: echo "Only Markdown files changed -- skipping install/lint/test."
