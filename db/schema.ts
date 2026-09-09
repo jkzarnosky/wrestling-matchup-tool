@@ -1,5 +1,17 @@
 import { sql } from "drizzle-orm";
-import { check, date, integer, pgEnum, pgTable, real, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  check,
+  date,
+  integer,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  real,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "team_rep"]);
 
@@ -128,3 +140,32 @@ export const wrestlerHistory = pgTable("wrestler_history", {
     .references(() => users.id),
   changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Epic 2: a week's matchup run. Starts with just who's hosting + which teams are attending
+// (Epic 2 story "Select attending teams for the week") -- "Configure weekly matching thresholds"
+// and "Generate weekly matchups" fill in the rest of this table (thresholds, results) as those
+// ship, rather than each inventing their own storage. See DECISIONS.md.
+export const matchupRuns = pgTable("matchup_runs", {
+  id: serial("id").primaryKey(),
+  createdBy: integer("created_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Join table: which teams are attending a given run. The AC's "2-4 teams" rule isn't a DB
+// constraint -- Postgres can't cheaply express "this many related rows exist" as a CHECK, so it's
+// enforced in lib/matchup-runs.ts instead, the same way other cross-field business rules
+// (wrestler field validation, dedup) are application-level rather than schema-level.
+export const matchupRunTeams = pgTable(
+  "matchup_run_teams",
+  {
+    runId: integer("run_id")
+      .notNull()
+      .references(() => matchupRuns.id),
+    teamId: integer("team_id")
+      .notNull()
+      .references(() => teams.id),
+  },
+  (table) => [primaryKey({ columns: [table.runId, table.teamId] })]
+);
