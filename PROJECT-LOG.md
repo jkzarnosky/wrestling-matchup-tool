@@ -8,6 +8,25 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-09] — [MILESTONE] Epic 2: Configure weekly matching thresholds
+**Shipped:** A weekly matchup run's page now has a real form for setting the four thresholds a Hosting
+Team Rep controls: allowable age difference, skill-level difference, weight difference (flat lbs or
+percent, Rep's choice), and number of mats. The form pre-fills with sensible defaults (±1 year, ±1
+skill level, ±10% weight) so a new Rep isn't starting from a blank guess, and can be saved and changed
+again as many times as needed before matchups are generated.
+
+**Decisions made:**
+- **[DECISION]** Thresholds are set via a separate `PATCH` action on the run, not bundled into the
+  run-creation endpoint — each Epic 2 story owns a distinct step of the same incrementally-built run.
+- **[DECISION]** Threshold columns are nullable with no DB-level default — the AC's "sensible
+  defaults" are a UI suggestion the Rep can override, not something the database would silently apply.
+  Mat count has no default at all, matching the earlier defaults decision.
+
+**Next up:** Epic 2 — Generate weekly matchups, the final Epic 2 story, building on this run's teams
+and thresholds.
+
+---
+
 ## [2026-09-03] — [MILESTONE] Epic 2: Select attending teams for the week
 **Shipped:** The first real Epic 2 feature — a Hosting Team Rep (or Admin) can start a new weekly
 matchup run by picking 2–4 attending teams from the full league, not just their own team. The run gets

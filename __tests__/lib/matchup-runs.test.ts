@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { teams, users } from "../../db/schema";
 import { createTestDb } from "../db/test-db";
-import { ValidationError, createMatchupRun, getMatchupRunById } from "../../lib/matchup-runs";
+import {
+  ValidationError,
+  createMatchupRun,
+  getMatchupRunById,
+  setMatchupRunThresholds,
+} from "../../lib/matchup-runs";
 
 type TestDb = Awaited<ReturnType<typeof createTestDb>>;
 
@@ -99,5 +104,64 @@ describe("getMatchupRunById", () => {
     const fetched = await getMatchupRunById(db, created.id);
     expect(fetched).toMatchObject({ id: created.id, createdBy: admin.id });
     expect(fetched!.teams.map((t) => t.id).sort()).toEqual([teamRows[0].id, teamRows[2].id].sort());
+  });
+
+  it("thresholds are null until explicitly set", async () => {
+    const { teamRows, admin } = await setup(db);
+    const created = await createMatchupRun(db, [teamRows[0].id, teamRows[1].id], admin.id);
+    expect(created).toMatchObject({
+      ageDiffYears: null,
+      skillDiffLevels: null,
+      weightDiffMode: null,
+      weightDiffValue: null,
+      matCount: null,
+    });
+  });
+});
+
+const validThresholds = { ageDiffYears: 1, skillDiffLevels: 1, weightDiffMode: "percent", weightDiffValue: 10, matCount: 3 };
+
+describe("setMatchupRunThresholds", () => {
+  let db: TestDb;
+
+  beforeEach(async () => {
+    db = await createTestDb();
+  });
+
+  it("throws for a nonexistent run", async () => {
+    await expect(setMatchupRunThresholds(db, 999999, validThresholds)).rejects.toThrow(ValidationError);
+  });
+
+  it("sets all five thresholds", async () => {
+    const { teamRows, admin } = await setup(db);
+    const run = await createMatchupRun(db, [teamRows[0].id, teamRows[1].id], admin.id);
+
+    const updated = await setMatchupRunThresholds(db, run.id, validThresholds);
+    expect(updated).toMatchObject(validThresholds);
+    expect(updated.teams).toHaveLength(2); // still carries the run's teams
+  });
+
+  it("can be called again to change previously-set thresholds", async () => {
+    const { teamRows, admin } = await setup(db);
+    const run = await createMatchupRun(db, [teamRows[0].id, teamRows[1].id], admin.id);
+    await setMatchupRunThresholds(db, run.id, validThresholds);
+
+    const updated = await setMatchupRunThresholds(db, run.id, { ...validThresholds, ageDiffYears: 2, matCount: 5 });
+    expect(updated).toMatchObject({ ageDiffYears: 2, matCount: 5 });
+  });
+
+  it.each([
+    ["negative age diff", { ...validThresholds, ageDiffYears: -1 }],
+    ["non-integer age diff", { ...validThresholds, ageDiffYears: 1.5 }],
+    ["negative skill diff", { ...validThresholds, skillDiffLevels: -1 }],
+    ["invalid weight diff mode", { ...validThresholds, weightDiffMode: "kg" }],
+    ["zero weight diff", { ...validThresholds, weightDiffValue: 0 }],
+    ["negative weight diff", { ...validThresholds, weightDiffValue: -5 }],
+    ["zero mat count", { ...validThresholds, matCount: 0 }],
+    ["non-integer mat count", { ...validThresholds, matCount: 2.5 }],
+  ])("rejects %s", async (_label, badInput) => {
+    const { teamRows, admin } = await setup(db);
+    const run = await createMatchupRun(db, [teamRows[0].id, teamRows[1].id], admin.id);
+    await expect(setMatchupRunThresholds(db, run.id, badInput)).rejects.toThrow(ValidationError);
   });
 });

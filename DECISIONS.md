@@ -5,6 +5,23 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-09 — Thresholds are a separate step on the same run, not folded into creation
+
+"Configure weekly matching thresholds" adds `PATCH /api/matchup-runs/[id]` rather than accepting
+thresholds as part of `POST /api/matchup-runs` at creation time. Keeps each Epic 2 story owning a
+distinct step of the same run (select teams → configure thresholds → generate), matching the
+incremental-persistence decision from 2026-09-03, rather than one story's endpoint growing to cover the
+next one's scope. Callable more than once -- a Rep realizing they need to widen a threshold after
+seeing the roster shouldn't need to abandon the run and start over.
+
+Threshold columns on `matchup_runs` are nullable, not DB-defaulted. The AC's "pre-fill with sensible
+defaults" is a UI-level suggestion (`DEFAULT_AGE_DIFF_YEARS` etc., exported from `lib/matchup-runs.ts`
+as the single source of truth the form imports) the Rep can change before saving -- not a value the DB
+would silently apply if they somehow skipped the step. Mat count has no default at all, per the AC
+("varies too much week to week for one to mean anything") and the earlier threshold-defaults decision.
+
+---
+
 ## 2026-09-03 — Matchup run persistence starts now, built incrementally
 
 JZ's call after I flagged this mid-implementation rather than during the Epic 2 AC review (should have
