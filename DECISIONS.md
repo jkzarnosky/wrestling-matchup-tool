@@ -5,6 +5,28 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-03 — Matchup run persistence starts now, built incrementally
+
+JZ's call after I flagged this mid-implementation rather than during the Epic 2 AC review (should have
+caught it then — the review already identified persistence as a hard blocker for #6/#28, just didn't
+realize #4 was where the decision actually had to be made first): `matchup_runs` + a `matchup_run_teams`
+join table are added now, with just `id`/`created_by`/`created_at` and the selected teams. "Configure
+weekly matching thresholds" (#5) and "Generate weekly matchups" (#6) will add their own columns/tables
+to this run as they ship, rather than each story inventing its own storage or #4 shipping ephemeral and
+needing a rework later. Same incremental-schema pattern Epic 1 used for `wrestlers`/`wrestler_history`.
+
+**Team count (2-4) is application-level validation, not a DB constraint.** Postgres can't cheaply
+express "between 2 and 4 related rows exist" as a `CHECK` the way `wrestlers_skill_level_range` checks
+a single column — would need a trigger, which is more machinery than this warrants. Enforced in
+`lib/matchup-runs.ts` instead, matching how CSV/wrestler field validation is already application-level.
+
+**No team-scoping authorization gate on matchup-run routes.** Follows directly from the Epic 2 AC
+review's cross-team read-access decision: any logged-in user (Admin or Team Rep) can select any team in
+the league to attend, not just their own. `POST /api/matchup-runs` only checks "logged in," the same as
+`GET /api/teams` already did before this story.
+
+---
+
 ## 2026-09-03 — Weekly matching threshold defaults: ±1 year age, ±1 skill level, ±10% weight
 
 Closes the one real blocker the Epic 2 AC review flagged: "Configure weekly matching thresholds" (issue
