@@ -3,7 +3,17 @@
 // gets messy from clicking around. Only ever touches whatever DATABASE_URL points at -- never run
 // this against anything but your own local/dev database.
 import { db } from "../db";
-import { invites, otpCodes, sessions, teams, users, wrestlerHistory, wrestlers } from "../db/schema";
+import {
+  invites,
+  matchupRunTeams,
+  matchupRuns,
+  otpCodes,
+  sessions,
+  teams,
+  users,
+  wrestlerHistory,
+  wrestlers,
+} from "../db/schema";
 import { createTeam } from "../lib/teams";
 
 const DEMO_TEAMS = [
@@ -25,6 +35,8 @@ async function main() {
   // Order matters -- children before parents, to satisfy foreign keys.
   await db.delete(wrestlerHistory);
   await db.delete(wrestlers);
+  await db.delete(matchupRunTeams);
+  await db.delete(matchupRuns);
   await db.delete(otpCodes);
   await db.delete(sessions);
   await db.delete(invites);

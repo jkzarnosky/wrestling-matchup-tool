@@ -35,8 +35,10 @@ Full breakdown of epics, stories, and acceptance criteria: [BACKLOG.md](BACKLOG.
 
 ## Status
 
-Epic .5 (user management: login, teams, invites, base pages) is shipped. Epic 1 (wrestler data,
-CSV import) is next. See [PROJECT-LOG.md](PROJECT-LOG.md) for what's shipped so far and
+Epic .5 (user management: login, teams, invites, base pages) and Epic 1 (wrestler data: CSV import,
+add/edit UI, change history via each edit) are shipped. Epic 2 (weekly matchmaking) is in progress —
+"Select attending teams for the week" is done; "Configure weekly matching thresholds" and "Generate
+weekly matchups" are next. See [PROJECT-LOG.md](PROJECT-LOG.md) for what's shipped so far and
 [DECISIONS.md](DECISIONS.md) for why things were built the way they were.
 
 ## Stack
@@ -88,6 +90,43 @@ npm test
 `RESEND_API_KEY` can stay blank for local dev — login/invite codes just get logged to the console
 instead of emailed (see `lib/email.ts`).
 
+## Routes
+
+Kept current here as pages/routes ship — update this table in the same PR that adds or changes one.
+
+### Pages
+
+| Path | Access | What it does |
+|---|---|---|
+| `/` | Public | Placeholder landing page |
+| `/login` | Public | Email → one-time code → session |
+| `/team` | Logged in | Redirects to your own team (`/team/[teamId]`), or the first team if Admin |
+| `/team/[teamId]` | Own team (Rep) / any team (Admin) | Roster: list, add/edit wrestler, CSV import |
+| `/admin/teams` | Admin only | Create/edit teams |
+| `/admin/invites` | Admin only | Send invites, see pending vs. accepted |
+| `/invite/[token]` | Public (needs the token) | New user sets their name, accepts the invite, gets logged in |
+| `/matchups/new` | Logged in | Start a weekly matchup run: pick 2–4 attending teams from the whole league, not just your own |
+| `/matchups/[runId]` | Logged in | A matchup run's attending teams; thresholds and generated matchups land here once those stories ship |
+
+### API routes
+
+| Method + Path | Access | What it does |
+|---|---|---|
+| `POST /api/auth/request-code` | Public | Emails (or dev-console-logs) a login code |
+| `POST /api/auth/verify-code` | Public | Verifies the code, creates a session |
+| `POST /api/auth/logout` | Logged in | Destroys the session |
+| `GET /api/teams` | Logged in | List teams |
+| `POST /api/teams` | Admin | Create a team |
+| `PATCH /api/teams/[id]` | Admin | Edit a team |
+| `GET /api/invites` | Admin | List invites |
+| `POST /api/invites` | Admin | Send an invite |
+| `POST /api/invites/accept` | Public (needs token) | Accept an invite |
+| `GET /api/teams/[id]/wrestlers` | Own team / Admin | List a team's roster |
+| `POST /api/teams/[id]/wrestlers` | Own team / Admin | Add a wrestler |
+| `PATCH /api/teams/[id]/wrestlers/[wrestlerId]` | Own team / Admin | Edit a wrestler |
+| `POST /api/teams/[id]/wrestlers/import` | Own team / Admin | CSV import |
+| `POST /api/matchup-runs` | Logged in | Create a matchup run for 2–4 selected teams — no team-scoping gate, since picking teams other than your own is the point (see DECISIONS.md) |
+
 ## Local demo
 
 No hosted demo yet (parking-lot item — see BACKLOG.md). To show this locally instead of just running
@@ -97,9 +136,10 @@ it against your own dev data:
 npm run demo:reset
 ```
 
-Wipes teams/users/invites/sessions back to empty and reseeds a handful of synthetic teams plus the
-Admin account from `.env.local` — safe to re-run any time the data gets messy from clicking around.
-Wrestler data isn't seeded yet since that table doesn't exist until Epic 1 ships.
+Wipes teams/users/invites/sessions/wrestlers/matchup-runs back to empty and reseeds a handful of
+synthetic teams plus the Admin account from `.env.local` — safe to re-run any time the data gets messy
+from clicking around. Wrestlers and matchup runs are cleared but not reseeded with synthetic data by
+this script (add some yourself via CSV import/the UI once teams exist).
 
 Since there's no real email delivery configured, login/invite codes print to the terminal running
 `npm run dev` (`[dev email fallback] ...`) — that's how you get the code to actually log in during a
