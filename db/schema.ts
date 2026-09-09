@@ -191,3 +191,30 @@ export const matchupRunTeams = pgTable(
   },
   (table) => [primaryKey({ columns: [table.runId, table.teamId] })]
 );
+
+// Epic 2 story "Generate weekly matchups" -- one row per real pairing (wrestlerTwoId set, matNumber
+// set) or per outlier (wrestlerTwoId AND matNumber both null -- an outlier isn't assigned a mat,
+// since it isn't a match). Generating is idempotent: every call clears a run's existing rows first
+// and inserts a fresh set, so re-running after fixing a wrestler's weight doesn't need manual cleanup.
+export const matchupRunPairings = pgTable(
+  "matchup_run_pairings",
+  {
+    id: serial("id").primaryKey(),
+    runId: integer("run_id")
+      .notNull()
+      .references(() => matchupRuns.id),
+    matNumber: integer("mat_number"),
+    wrestlerOneId: integer("wrestler_one_id")
+      .notNull()
+      .references(() => wrestlers.id),
+    wrestlerTwoId: integer("wrestler_two_id").references(() => wrestlers.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("matchup_run_pairings_no_self_match", sql`${table.wrestlerOneId} != ${table.wrestlerTwoId}`),
+    check(
+      "matchup_run_pairings_mat_iff_matched",
+      sql`(${table.wrestlerTwoId} IS NULL AND ${table.matNumber} IS NULL) OR (${table.wrestlerTwoId} IS NOT NULL AND ${table.matNumber} IS NOT NULL)`
+    ),
+  ]
+);
