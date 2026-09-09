@@ -126,3 +126,20 @@ gh project item-edit --project-id PVT_kwHOEJ1UKs4BhVKq --id <ITEM_ID> \
 ```bash
 gh project item-list 1 --owner jkzarnosky --format json --jq '.items[] | select(.content.number == <ISSUE_NUMBER>) | .id'
 ```
+
+## Avoid accidental issue auto-close keywords when NOT closing the issue
+GitHub auto-closes an issue on merge to the default branch if a closing keyword (`close`, `closes`,
+`closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`) appears immediately before `#N`
+-- anywhere in the PR title, PR body, or the squash-merge commit message (built from the constituent
+commit messages by default). It does not read the rest of the sentence: "Fixed #28's stale label" and
+"closes #5's open item" both trigger a real auto-close, even though neither PR actually finished that
+issue's story. Hit for real on 2026-09-03 (PRs #51 and #52), caught days later when JZ asked whether
+only one Epic 2 issue had actually been worked on -- both #5 and #28 had been silently, incorrectly
+closed and marked "Done" on the board with no story actually built.
+
+When referencing an issue in a PR title/body/commit message for a reason *other than* "this PR fully
+completes that issue's story," rephrase to break the keyword+number adjacency -- "the #5 open item",
+"issue #5's placeholder", "#28's label" (note: even "Fixed #28's" still triggers it -- the keyword only
+needs to be immediately before the `#`, not immediately before whitespace). When in doubt, put a space
+or word between the keyword and the issue reference, or don't use a closing keyword at all ("addresses",
+"relates to", "touches").
