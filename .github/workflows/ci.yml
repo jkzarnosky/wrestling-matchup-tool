@@ -101,7 +101,7 @@ jobs:
         if: steps.filter.outputs.db == 'true'
       - name: Migrations apply cleanly from empty (real Postgres)
         if: steps.filter.outputs.db == 'true'
-        run: npm run db:migrate
+        run: npm run db:migrate:ci
       - name: schema.ts and migrations are in sync (no forgotten db:generate)
         if: steps.filter.outputs.db == 'true'
         run: |
