@@ -169,3 +169,5 @@ export const matchupRunTeams = pgTable(
   },
   (table) => [primaryKey({ columns: [table.runId, table.teamId] })]
 );
+
+// (smoke test: harmless comment to trigger the migrations CI job — throwaway branch)
