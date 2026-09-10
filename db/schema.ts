@@ -19,6 +19,7 @@ export const teams = pgTable("teams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   conference: text("conference").notNull(),
+  nickname: text("nickname"),
 });
 
 export const users = pgTable(
