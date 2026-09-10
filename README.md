@@ -58,13 +58,17 @@ Four tiers, from cheapest/most-numerous to most expensive/rarest:
 | 1. Unit | Pure functions, no I/O (`canViewTeam`, `requireAdmin`, validation) | Vitest | Mostly folded into Tier 2 files today |
 | 2. Integration | Business logic that touches the database | Vitest + [pglite](https://github.com/electric-sql/pglite) (embedded real Postgres, built from the real migration SQL) | Primary suite — auth, teams, invites, schema/constraints |
 | 3. Route/API | Next.js route handlers — auth gating, request parsing, response shape/status codes | Vitest, importing route handlers directly with `@/db` and the relevant `lib/*` module mocked out | One reference example (`__tests__/api/teams.test.ts`); required for new routes going forward, see BACKLOG.md's Definition of Done |
-| 4. End-to-end | Full user flows through a real running app in a real browser | None automated yet — [MANUAL-TEST-CASES.md](MANUAL-TEST-CASES.md) is the checklist for now | Small set of Playwright tests planned for these same critical paths eventually, not full coverage |
+| 4. End-to-end | A few critical journeys through the real built app in a real browser | [Playwright](https://playwright.dev) — production build, real Postgres, `npm run test:e2e` | Login, CSV import, the full matchmaking flow. Deliberately small; [MANUAL-TEST-CASES.md](MANUAL-TEST-CASES.md) still covers the wider surface |
 
-Why pglite instead of hitting the real Neon database in tests: real Postgres semantics (enums, CHECK
-constraints, unique indexes) without needing database credentials in CI, and every test starts from a
-guaranteed-empty, freshly-migrated database — no cross-test pollution, no cleanup step. See
-DECISIONS.md for the tradeoffs (and the known one: a fresh pglite instance per test is simple but not
-free — watch this if the suite's runtime becomes a problem as it grows).
+Why pglite instead of hitting the real Neon database in Tier 1–3 tests: real Postgres semantics
+(enums, CHECK constraints, unique indexes) without needing database credentials in CI, and every test
+starts from a guaranteed-empty, freshly-migrated database — no cross-test pollution, no cleanup step.
+See DECISIONS.md for the tradeoffs (and the known one: a fresh pglite instance per test is simple but
+not free — watch this if the suite's runtime becomes a problem as it grows).
+
+The CI e2e job records video of every journey; the `playwright-report` artifact on each run bundles
+those plus traces. To run e2e locally: `npm run e2e:seed` then `npm run test:e2e` (needs `DATABASE_URL`
+— it wipes and reseeds that database).
 
 ```bash
 npm test          # everything, once

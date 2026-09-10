@@ -5,6 +5,38 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-10 — Playwright e2e: DB driver made pluggable, and how the test drives the OTP login
+
+Adding Tier 4 (Playwright) forced two supporting decisions.
+
+**`db/index.ts` picks its driver from the URL now.** It was hardwired to `@neondatabase/serverless`
+(HTTP), which only talks to Neon/Vercel/Supabase endpoints — so the e2e job couldn't run the real app
+against a plain Postgres service container. Alternatives: (1) give CI a secret pointing at a real Neon
+e2e database — most faithful, but needs JZ to provision one and the PR's CI stays red until then; (2)
+run a Neon websocket proxy in the container — extra moving part for no real gain. Chose to make the
+driver pluggable: node-postgres for a non-Neon URL, Neon serverless for a `*.neon.tech` URL, override
+with `DB_DRIVER`. Prod on Vercel is unchanged; local dev against Docker Postgres now works too, no Neon
+account needed. `pg` moves from a dev-only dep (it was already pulled in for the migration CI check) to
+a real dependency.
+
+**The e2e login uses a test seam, not a bypass.** The one-time code is SHA-256 hashed in the DB and
+never stored plaintext, so the suite can't read it back. Options weighed: (a) a test-only "just make me
+a session" route — fast, but then the real login UI is never exercised; (b) brute-force the 6-digit code
+against the stored hash — works (SHA-256, 1M candidates, sub-second) but too cute for a codebase modeled
+on a regulated shop, and couples the test to the hash impl; (c) a deterministic code in test mode —
+one env var away from every production login code being `000000`. Chose (d): when `E2E_TEST_MODE=1`,
+the app appends each issued code to a local file (`e2e/.artifacts/login-codes.log`) and the test reads
+the latest line. Single gate on an explicit opt-in env var never set in a real deployment; even if it
+were, all it does is write a meaningless local file. The real email → code → session UI runs end to end.
+
+**Playwright over Cypress; video kept as a CI artifact.** Playwright for the built-in multi-browser
+support, trace viewer, and no-flake auto-waiting. `video: "on"` records every journey; the
+`playwright-report` artifact (HTML + videos + traces) uploads on every CI run — that's the "watch the
+critical paths actually run" output, downloadable from the PR checks. Not published to a always-on URL
+(GitHub Pages) yet — possible follow-up.
+
+---
+
 ## 2026-09-09 — Generate weekly matchups: algorithm, mat assignment, cross-team scope
 
 The last Epic 2 story. Two real forks discussed with JZ before building, plus two smaller calls made
