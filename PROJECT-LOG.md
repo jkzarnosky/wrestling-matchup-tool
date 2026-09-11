@@ -8,6 +8,32 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-10] — [MILESTONE] Verification pipeline: real-Postgres migration check + Playwright e2e
+**Shipped:** No product feature — hardening how changes get verified before merge, from a discussion
+about what a team's checkpoints look like versus a solo project's. Two CI additions: a job that runs
+the database migrations against a real Postgres server (not just the embedded one the unit tests use)
+and fails if the schema and migration files have drifted apart; and a Playwright end-to-end suite that
+drives three critical journeys — login, CSV import, the full matchmaking flow — through the real built
+app in a real browser, recording video of each. Four other checkpoints (coverage gate, dependency
+scanning, static security analysis, a production-build check, pre-push hooks) are written up in
+BACKLOG.md's Parking Lot for later.
+
+**Decisions made:**
+- **[DECISION]** `db/index.ts` now picks its driver from the connection string (node-postgres for a
+  plain Postgres URL, Neon serverless for a Neon URL) instead of being hardwired to Neon — needed so
+  e2e can run against a throwaway Postgres container with no secrets, and a nice side effect is local
+  dev against Docker Postgres now works. See DECISIONS.md.
+- **[DECISION]** The e2e login uses a narrow test seam (the app writes each one-time code to a local
+  file when `E2E_TEST_MODE=1`) so the real login UI is exercised end to end — chosen over a
+  session-bypass route, brute-forcing the hashed code, or a deterministic test-mode code. See
+  DECISIONS.md.
+
+**Next up:** Epic 2 is complete. "Public read-only matchup page" (issue #28) is still unscoped and
+Epic 3 is deferred until Epic 2 is proven in real use — both need a product conversation before either
+becomes engineering work.
+
+---
+
 ## [2026-09-09] — [MILESTONE] Epic 2: Generate weekly matchups -- Epic 2 complete
 **Shipped:** The final Epic 2 story, and the feature this whole tool is named after. A matchup run's
 page now has a "Generate matchups" button that actually pairs wrestlers across the attending teams
