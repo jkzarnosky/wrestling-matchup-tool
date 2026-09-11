@@ -6,3 +6,13 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+/* Epic 2 "Generate weekly matchups" AC: "output is a printable matchup sheet" -- a plain browser
+   print (Ctrl+P / window.print()) of the matchup-run page satisfies this without a PDF-generation
+   dependency; this just hides the interactive chrome (forms, buttons) that shouldn't end up on a
+   printed sheet. See DECISIONS.md. */
+@media print {
+  .no-print {
+    display: none;
+  }
+}

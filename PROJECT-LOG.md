@@ -8,6 +8,32 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-09] — [MILESTONE] Epic 2: Generate weekly matchups -- Epic 2 complete
+**Shipped:** The final Epic 2 story, and the feature this whole tool is named after. A matchup run's
+page now has a "Generate matchups" button that actually pairs wrestlers across the attending teams
+within the configured thresholds, assigns each pair to a mat, flags anyone it couldn't match as an
+outlier instead of dropping them, and produces a printable sheet (`window.print()`) grouped by mat.
+
+**Decisions made:**
+- **[DECISION]** Matching algorithm: greedy nearest-weight, then a bounded local-repair pass that
+  rescues pairs of remaining outliers by splitting one existing pair between them -- chosen over both
+  plain greedy alone (a known failure mode) and a full optimal weighted-matching algorithm (correct in
+  principle, but a genuinely different, multi-day algorithm family with real correctness risk, for a
+  benefit that's probably modest at this league's actual scale).
+- **[DECISION]** `matCount` actually assigns each match to a mat (round-robin), not just a recorded
+  capacity input -- otherwise that threshold would be decorative in the output.
+- **[DECISION]** Matching is cross-team only, never a teammate -- the strongest reading of "matches
+  wrestlers across selected teams," and how a real weekly dual actually works.
+- **[DECISION]** Percent weight mode is relative to the lighter wrestler, matching the standard
+  real-world weight-class-allowance convention.
+
+**Next up:** Epic 2 is done. "Public read-only matchup page" (issue #28) is unscoped (still needs its
+own AC pass per the Parking Lot) and Epic 3 (On-the-spot event adjustments) is explicitly deferred
+until Epic 2 is proven in real use, per BACKLOG.md -- both need a product conversation with JZ before
+either becomes real engineering work.
+
+---
+
 ## [2026-09-09] — [MILESTONE] Epic 2: Configure weekly matching thresholds
 **Shipped:** A weekly matchup run's page now has a real form for setting the four thresholds a Hosting
 Team Rep controls: allowable age difference, skill-level difference, weight difference (flat lbs or

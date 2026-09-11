@@ -5,16 +5,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "../../app/api/matchup-runs/route";
 import { PATCH } from "../../app/api/matchup-runs/[id]/route";
+import { POST as generatePost } from "../../app/api/matchup-runs/[id]/generate/route";
 import { ValidationError } from "../../lib/matchup-runs";
 
-const { getCurrentUserMock, createMatchupRunMock, getMatchupRunByIdMock, setMatchupRunThresholdsMock } = vi.hoisted(
-  () => ({
-    getCurrentUserMock: vi.fn(),
-    createMatchupRunMock: vi.fn(),
-    getMatchupRunByIdMock: vi.fn(),
-    setMatchupRunThresholdsMock: vi.fn(),
-  })
-);
+const {
+  getCurrentUserMock,
+  createMatchupRunMock,
+  getMatchupRunByIdMock,
+  setMatchupRunThresholdsMock,
+  generateMatchupRunPairingsMock,
+} = vi.hoisted(() => ({
+  getCurrentUserMock: vi.fn(),
+  createMatchupRunMock: vi.fn(),
+  getMatchupRunByIdMock: vi.fn(),
+  setMatchupRunThresholdsMock: vi.fn(),
+  generateMatchupRunPairingsMock: vi.fn(),
+}));
 
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/current-user", () => ({ getCurrentUser: getCurrentUserMock }));
@@ -26,6 +32,10 @@ vi.mock("@/lib/matchup-runs", async () => {
     getMatchupRunById: getMatchupRunByIdMock,
     setMatchupRunThresholds: setMatchupRunThresholdsMock,
   };
+});
+vi.mock("@/lib/matchup-generation", async () => {
+  const actual = await vi.importActual<typeof import("../../lib/matchup-generation")>("../../lib/matchup-generation");
+  return { ...actual, generateMatchupRunPairings: generateMatchupRunPairingsMock };
 });
 
 function postRequest(body: unknown) {
@@ -128,5 +138,49 @@ describe("PATCH /api/matchup-runs/[id]", () => {
     const res = await PATCH(request, params);
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("Number of mats must be a positive whole number.");
+  });
+});
+
+function idParams(id: string) {
+  return { params: Promise.resolve({ id }) };
+}
+
+describe("POST /api/matchup-runs/[id]/generate", () => {
+  it("returns 401 when not logged in", async () => {
+    getCurrentUserMock.mockResolvedValue(null);
+    const res = await generatePost(new Request("http://localhost"), idParams("1"));
+    expect(res.status).toBe(401);
+    expect(generateMatchupRunPairingsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for a nonexistent run", async () => {
+    getCurrentUserMock.mockResolvedValue({ role: "admin", teamId: null, id: 5 });
+    getMatchupRunByIdMock.mockResolvedValue(null);
+
+    const res = await generatePost(new Request("http://localhost"), idParams("999"));
+    expect(res.status).toBe(404);
+    expect(generateMatchupRunPairingsMock).not.toHaveBeenCalled();
+  });
+
+  it("generates and returns the sheet", async () => {
+    getCurrentUserMock.mockResolvedValue({ role: "team_rep", teamId: 1, id: 7 });
+    getMatchupRunByIdMock.mockResolvedValue({ id: 1, createdBy: 7, teams: [] });
+    const sheet = { pairings: [{ matNumber: 1, wrestlerOne: { id: 1 }, wrestlerTwo: { id: 2 } }], outliers: [] };
+    generateMatchupRunPairingsMock.mockResolvedValue(sheet);
+
+    const res = await generatePost(new Request("http://localhost"), idParams("1"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(sheet);
+    expect(generateMatchupRunPairingsMock).toHaveBeenCalledWith({}, 1);
+  });
+
+  it("returns 400 with the validation message when thresholds aren't set", async () => {
+    getCurrentUserMock.mockResolvedValue({ role: "admin", teamId: null, id: 5 });
+    getMatchupRunByIdMock.mockResolvedValue({ id: 1, createdBy: 5, teams: [] });
+    generateMatchupRunPairingsMock.mockRejectedValue(new ValidationError("Set thresholds before generating matchups."));
+
+    const res = await generatePost(new Request("http://localhost"), idParams("1"));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("Set thresholds before generating matchups.");
   });
 });

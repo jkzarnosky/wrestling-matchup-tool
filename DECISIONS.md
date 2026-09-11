@@ -5,6 +5,49 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-09 — Generate weekly matchups: algorithm, mat assignment, cross-team scope
+
+The last Epic 2 story. Two real forks discussed with JZ before building, plus two smaller calls made
+along the way.
+
+**Matching algorithm: greedy nearest-weight, then a bounded local-repair pass.** Alternatives
+discussed: (1) plain greedy alone -- simplest, but a known failure mode (no backtracking, an early
+"good enough" pick can strand someone who could've been matched with a different arrangement); (2) a
+full optimal weighted-matching algorithm (Edmonds' Blossom, since 3-4 attending teams makes this a
+general, non-bipartite graph, not solvable by the simpler bipartite algorithms) -- provably best, but a
+genuinely different algorithm family, not an extension of greedy, and a multi-day implementation with
+real correctness risk hand-rolling Blossom's odd-cycle contraction for a benefit that's probably modest
+at this league's actual scale (dozens of kids, not hundreds). Chose the middle ground: plain greedy
+first, then a bounded search that tries rescuing exactly two remaining outliers by splitting one
+existing pair between them (the minimal repair actually possible post-greedy -- there's no third free
+wrestler to complete a single-outlier repair with). Verified against a real, hand-traced adversarial
+5-wrestler case (found by brute-force search, not constructed by guesswork) where plain greedy leaves 3
+outliers and repair rescues 2 of them, the 3rd being genuinely unmatchable -- see
+`__tests__/lib/matchup-generation.test.ts`.
+
+**Mat assignment: round-robin across the configured mat count, sheet grouped by mat.** Alternative:
+leave `matCount` as a pure capacity/record-keeping input with no effect on the output. Chose assignment
+-- a real printed matchup sheet at an event is virtually always organized by mat so coaches/refs know
+where to send each pair; leaving `matCount` unused in the output would make that threshold field
+decorative. Assignment order follows the order `generatePairings` produced pairs in (not otherwise
+optimized) -- even spread across mats, nothing fancier.
+
+**Cross-team only, never a teammate.** Not spelled out as explicitly in the AC as the other rules, but
+"matches wrestlers *across* selected teams" is the strongest reading, and matches how a real weekly
+dual actually works (against other clubs, not your own team). Enforced as a hard eligibility rule.
+
+**Weight percent mode is relative to the lighter wrestler, not the heavier or an average.** The
+standard convention real weight-class allowances use. Test coverage specifically distinguishes this
+from the (wrong) alternative of using the heavier wrestler as the denominator, since the two can
+disagree right at a threshold boundary.
+
+**Printable sheet: plain browser print (`window.print()` + `@media print` CSS), not a PDF-generation
+dependency.** AC just says "printable" -- a `Ctrl+P` of the matchup-run page, with the interactive
+chrome (forms, buttons) hidden via a `.no-print` utility class, satisfies that without adding a new
+dependency for a first pass. Revisit if a more polished export is actually wanted later.
+
+---
+
 ## 2026-09-09 — Thresholds are a separate step on the same run, not folded into creation
 
 "Configure weekly matching thresholds" adds `PATCH /api/matchup-runs/[id]` rather than accepting

@@ -35,11 +35,11 @@ Full breakdown of epics, stories, and acceptance criteria: [BACKLOG.md](BACKLOG.
 
 ## Status
 
-Epic .5 (user management: login, teams, invites, base pages) and Epic 1 (wrestler data: CSV import,
-add/edit UI, change history via each edit) are shipped. Epic 2 (weekly matchmaking) is in progress —
-"Select attending teams for the week" is done; "Configure weekly matching thresholds" and "Generate
-weekly matchups" are next. See [PROJECT-LOG.md](PROJECT-LOG.md) for what's shipped so far and
-[DECISIONS.md](DECISIONS.md) for why things were built the way they were.
+Epic .5 (user management), Epic 1 (wrestler data), and Epic 2 (weekly matchmaking: select attending
+teams, configure thresholds, generate matchups) are all shipped. Epic 3 (on-the-spot event
+adjustments) is deferred until Epic 2 is proven in real use, per BACKLOG.md. See
+[PROJECT-LOG.md](PROJECT-LOG.md) for what's shipped so far and [DECISIONS.md](DECISIONS.md) for why
+things were built the way they were.
 
 ## Stack
 
@@ -106,7 +106,7 @@ Kept current here as pages/routes ship — update this table in the same PR that
 | `/admin/invites` | Admin only | Send invites, see pending vs. accepted |
 | `/invite/[token]` | Public (needs the token) | New user sets their name, accepts the invite, gets logged in |
 | `/matchups/new` | Logged in | Start a weekly matchup run: pick 2–4 attending teams from the whole league, not just your own |
-| `/matchups/[runId]` | Logged in | A matchup run's attending teams; thresholds and generated matchups land here once those stories ship |
+| `/matchups/[runId]` | Logged in | A matchup run's attending teams, threshold form, and (once generated) the printable matchup sheet — `window.print()` for a physical copy |
 
 ### API routes
 
@@ -126,6 +126,8 @@ Kept current here as pages/routes ship — update this table in the same PR that
 | `PATCH /api/teams/[id]/wrestlers/[wrestlerId]` | Own team / Admin | Edit a wrestler |
 | `POST /api/teams/[id]/wrestlers/import` | Own team / Admin | CSV import |
 | `POST /api/matchup-runs` | Logged in | Create a matchup run for 2–4 selected teams — no team-scoping gate, since picking teams other than your own is the point (see DECISIONS.md) |
+| `PATCH /api/matchup-runs/[id]` | Logged in | Set/update a run's matching thresholds |
+| `POST /api/matchup-runs/[id]/generate` | Logged in | Run the matching algorithm for a run's attending teams, persist the result (clearing any previous one) |
 
 ## Local demo
 
