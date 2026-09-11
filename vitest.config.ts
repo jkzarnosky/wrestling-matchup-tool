@@ -14,7 +14,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    exclude: ["node_modules/**", ".next/**"],
+    // e2e/** is Playwright's, not Vitest's -- its .spec.ts files import @playwright/test.
+    exclude: ["node_modules/**", ".next/**", "e2e/**"],
     setupFiles: ["./vitest.setup.ts"],
     // JUnit output only in CI -- local runs stay plain console output, no stray XML files.
     reporters: process.env.CI ? ["default", "junit"] : ["default"],

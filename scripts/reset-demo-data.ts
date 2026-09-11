@@ -5,6 +5,7 @@
 import { db } from "../db";
 import {
   invites,
+  matchupRunPairings,
   matchupRunTeams,
   matchupRuns,
   otpCodes,
@@ -32,7 +33,9 @@ function requireEnv(name: string): string {
 async function main() {
   console.log("Resetting local demo data...");
 
-  // Order matters -- children before parents, to satisfy foreign keys.
+  // Order matters -- children before parents, to satisfy foreign keys. matchupRunPairings
+  // references both wrestlers and matchupRuns, so it has to go before both of those.
+  await db.delete(matchupRunPairings);
   await db.delete(wrestlerHistory);
   await db.delete(wrestlers);
   await db.delete(matchupRunTeams);
