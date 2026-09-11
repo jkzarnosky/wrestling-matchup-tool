@@ -5,6 +5,31 @@ or more real alternatives), newest at the top.
 
 ---
 
+## 2026-09-11 — Disabled Next.js's auto-injected `CLAUDE.md` agent-rules block
+
+`next dev` (Next.js 16) auto-writes a generic "read `node_modules/next/dist/docs/` before writing any
+code" block into `CLAUDE.md` whenever it detects an AI coding agent and the block is missing, re-adding
+it on every run (confirmed from source: `next/dist/server/lib/generate-agent-files.js` and
+`app-info-log.js`, gated on `config.agentRules`, default `true`).
+
+**Alternatives considered:** (1) commit the block as-is — harmless in isolation, but Next.js re-touches
+it on future version bumps and it's boilerplate bolted onto a hand-maintained file, not something
+curated for this project; (2) create an `AGENTS.md` file so `writeAgentFiles` redirects there instead
+of `CLAUDE.md` (it prefers `AGENTS.md` when present) — avoids touching `CLAUDE.md`, but keeps a
+generic reminder file around for no observed benefit.
+
+**Chosen: `agentRules: false` in `next.config.ts`.** The block's entire value is prompting a check of
+version-pinned docs before writing Next.js-specific code, guarding against stale training-data APIs —
+a real problem in general, given Next's history of breaking changes (async `params`/`cookies()`, App
+vs Pages Router). But in this project's actual working pattern, new code is written by mirroring
+already-established conventions in the codebase, and genuinely unfamiliar APIs get checked against
+installed source directly as a matter of practice — so the generic reminder wasn't preventing anything
+in practice, while the recurring rewrite of a hand-maintained instructions file was real, avoidable
+noise. Verified: `agentRules: false` stops the write (confirmed via a `next dev` run — no log line, no
+`CLAUDE.md` diff) without needing a redirect file.
+
+---
+
 ## 2026-09-03 — Matchup run persistence starts now, built incrementally
 
 JZ's call after I flagged this mid-implementation rather than during the Epic 2 AC review (should have
