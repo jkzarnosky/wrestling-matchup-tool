@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { getCurrentUser } from "@/lib/current-user";
 import { getMatchupRunById } from "@/lib/matchup-runs";
+import { ConfigureThresholds } from "./ConfigureThresholds";
 
 export default async function MatchupRunPage({ params }: { params: Promise<{ runId: string }> }) {
   const user = await getCurrentUser();
@@ -28,7 +29,15 @@ export default async function MatchupRunPage({ params }: { params: Promise<{ run
           </li>
         ))}
       </ul>
-      <p>Thresholds and generated matchups are coming in a future story.</p>
+      <ConfigureThresholds
+        runId={run.id}
+        ageDiffYears={run.ageDiffYears}
+        skillDiffLevels={run.skillDiffLevels}
+        weightDiffMode={run.weightDiffMode}
+        weightDiffValue={run.weightDiffValue}
+        matCount={run.matCount}
+      />
+      <p>Generated matchups are coming in a future story.</p>
     </main>
   );
 }
