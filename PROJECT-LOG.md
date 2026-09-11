@@ -8,6 +8,77 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-10] — [MILESTONE] Verification pipeline: real-Postgres migration check + Playwright e2e
+**Shipped:** No product feature — hardening how changes get verified before merge, from a discussion
+about what a team's checkpoints look like versus a solo project's. Two CI additions: a job that runs
+the database migrations against a real Postgres server (not just the embedded one the unit tests use)
+and fails if the schema and migration files have drifted apart; and a Playwright end-to-end suite that
+drives three critical journeys — login, CSV import, the full matchmaking flow — through the real built
+app in a real browser, recording video of each. Four other checkpoints (coverage gate, dependency
+scanning, static security analysis, a production-build check, pre-push hooks) are written up in
+BACKLOG.md's Parking Lot for later.
+
+**Decisions made:**
+- **[DECISION]** `db/index.ts` now picks its driver from the connection string (node-postgres for a
+  plain Postgres URL, Neon serverless for a Neon URL) instead of being hardwired to Neon — needed so
+  e2e can run against a throwaway Postgres container with no secrets, and a nice side effect is local
+  dev against Docker Postgres now works. See DECISIONS.md.
+- **[DECISION]** The e2e login uses a narrow test seam (the app writes each one-time code to a local
+  file when `E2E_TEST_MODE=1`) so the real login UI is exercised end to end — chosen over a
+  session-bypass route, brute-forcing the hashed code, or a deterministic test-mode code. See
+  DECISIONS.md.
+
+**Next up:** Epic 2 is complete. "Public read-only matchup page" (issue #28) is still unscoped and
+Epic 3 is deferred until Epic 2 is proven in real use — both need a product conversation before either
+becomes engineering work.
+
+---
+
+## [2026-09-09] — [MILESTONE] Epic 2: Generate weekly matchups -- Epic 2 complete
+**Shipped:** The final Epic 2 story, and the feature this whole tool is named after. A matchup run's
+page now has a "Generate matchups" button that actually pairs wrestlers across the attending teams
+within the configured thresholds, assigns each pair to a mat, flags anyone it couldn't match as an
+outlier instead of dropping them, and produces a printable sheet (`window.print()`) grouped by mat.
+
+**Decisions made:**
+- **[DECISION]** Matching algorithm: greedy nearest-weight, then a bounded local-repair pass that
+  rescues pairs of remaining outliers by splitting one existing pair between them -- chosen over both
+  plain greedy alone (a known failure mode) and a full optimal weighted-matching algorithm (correct in
+  principle, but a genuinely different, multi-day algorithm family with real correctness risk, for a
+  benefit that's probably modest at this league's actual scale).
+- **[DECISION]** `matCount` actually assigns each match to a mat (round-robin), not just a recorded
+  capacity input -- otherwise that threshold would be decorative in the output.
+- **[DECISION]** Matching is cross-team only, never a teammate -- the strongest reading of "matches
+  wrestlers across selected teams," and how a real weekly dual actually works.
+- **[DECISION]** Percent weight mode is relative to the lighter wrestler, matching the standard
+  real-world weight-class-allowance convention.
+
+**Next up:** Epic 2 is done. "Public read-only matchup page" (issue #28) is unscoped (still needs its
+own AC pass per the Parking Lot) and Epic 3 (On-the-spot event adjustments) is explicitly deferred
+until Epic 2 is proven in real use, per BACKLOG.md -- both need a product conversation with JZ before
+either becomes real engineering work.
+
+---
+
+## [2026-09-09] — [MILESTONE] Epic 2: Configure weekly matching thresholds
+**Shipped:** A weekly matchup run's page now has a real form for setting the four thresholds a Hosting
+Team Rep controls: allowable age difference, skill-level difference, weight difference (flat lbs or
+percent, Rep's choice), and number of mats. The form pre-fills with sensible defaults (±1 year, ±1
+skill level, ±10% weight) so a new Rep isn't starting from a blank guess, and can be saved and changed
+again as many times as needed before matchups are generated.
+
+**Decisions made:**
+- **[DECISION]** Thresholds are set via a separate `PATCH` action on the run, not bundled into the
+  run-creation endpoint — each Epic 2 story owns a distinct step of the same incrementally-built run.
+- **[DECISION]** Threshold columns are nullable with no DB-level default — the AC's "sensible
+  defaults" are a UI suggestion the Rep can override, not something the database would silently apply.
+  Mat count has no default at all, matching the earlier defaults decision.
+
+**Next up:** Epic 2 — Generate weekly matchups, the final Epic 2 story, building on this run's teams
+and thresholds.
+
+---
+
 ## [2026-09-03] — [MILESTONE] Epic 2: Select attending teams for the week
 **Shipped:** The first real Epic 2 feature — a Hosting Team Rep (or Admin) can start a new weekly
 matchup run by picking 2–4 attending teams from the full league, not just their own team. The run gets

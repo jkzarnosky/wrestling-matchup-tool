@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { captureLoginCodeForE2E } from "./e2e-otp-capture";
 
 async function send(to: string, subject: string, text: string, devFallbackMessage: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -24,6 +25,7 @@ async function send(to: string, subject: string, text: string, devFallbackMessag
 /** Sends the login code by email. Falls back to logging the code to the console when
  * RESEND_API_KEY isn't set, so local dev works without a real Resend account. */
 export async function sendLoginCodeEmail(to: string, code: string): Promise<void> {
+  captureLoginCodeForE2E(to, code);
   await send(
     to,
     "Your login code",

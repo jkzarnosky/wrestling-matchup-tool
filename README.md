@@ -35,11 +35,11 @@ Full breakdown of epics, stories, and acceptance criteria: [BACKLOG.md](BACKLOG.
 
 ## Status
 
-Epic .5 (user management: login, teams, invites, base pages) and Epic 1 (wrestler data: CSV import,
-add/edit UI, change history via each edit) are shipped. Epic 2 (weekly matchmaking) is in progress —
-"Select attending teams for the week" is done; "Configure weekly matching thresholds" and "Generate
-weekly matchups" are next. See [PROJECT-LOG.md](PROJECT-LOG.md) for what's shipped so far and
-[DECISIONS.md](DECISIONS.md) for why things were built the way they were.
+Epic .5 (user management), Epic 1 (wrestler data), and Epic 2 (weekly matchmaking: select attending
+teams, configure thresholds, generate matchups) are all shipped. Epic 3 (on-the-spot event
+adjustments) is deferred until Epic 2 is proven in real use, per BACKLOG.md. See
+[PROJECT-LOG.md](PROJECT-LOG.md) for what's shipped so far and [DECISIONS.md](DECISIONS.md) for why
+things were built the way they were.
 
 ## Stack
 
@@ -58,13 +58,17 @@ Four tiers, from cheapest/most-numerous to most expensive/rarest:
 | 1. Unit | Pure functions, no I/O (`canViewTeam`, `requireAdmin`, validation) | Vitest | Mostly folded into Tier 2 files today |
 | 2. Integration | Business logic that touches the database | Vitest + [pglite](https://github.com/electric-sql/pglite) (embedded real Postgres, built from the real migration SQL) | Primary suite — auth, teams, invites, schema/constraints |
 | 3. Route/API | Next.js route handlers — auth gating, request parsing, response shape/status codes | Vitest, importing route handlers directly with `@/db` and the relevant `lib/*` module mocked out | One reference example (`__tests__/api/teams.test.ts`); required for new routes going forward, see BACKLOG.md's Definition of Done |
-| 4. End-to-end | Full user flows through a real running app in a real browser | None automated yet — [MANUAL-TEST-CASES.md](MANUAL-TEST-CASES.md) is the checklist for now | Small set of Playwright tests planned for these same critical paths eventually, not full coverage |
+| 4. End-to-end | A few critical journeys through the real built app in a real browser | [Playwright](https://playwright.dev) — production build, real Postgres, `npm run test:e2e` | Login, CSV import, the full matchmaking flow. Deliberately small; [MANUAL-TEST-CASES.md](MANUAL-TEST-CASES.md) still covers the wider surface |
 
-Why pglite instead of hitting the real Neon database in tests: real Postgres semantics (enums, CHECK
-constraints, unique indexes) without needing database credentials in CI, and every test starts from a
-guaranteed-empty, freshly-migrated database — no cross-test pollution, no cleanup step. See
-DECISIONS.md for the tradeoffs (and the known one: a fresh pglite instance per test is simple but not
-free — watch this if the suite's runtime becomes a problem as it grows).
+Why pglite instead of hitting the real Neon database in Tier 1–3 tests: real Postgres semantics
+(enums, CHECK constraints, unique indexes) without needing database credentials in CI, and every test
+starts from a guaranteed-empty, freshly-migrated database — no cross-test pollution, no cleanup step.
+See DECISIONS.md for the tradeoffs (and the known one: a fresh pglite instance per test is simple but
+not free — watch this if the suite's runtime becomes a problem as it grows).
+
+The CI e2e job records video of every journey; the `playwright-report` artifact on each run bundles
+those plus traces. To run e2e locally: `npm run e2e:seed` then `npm run test:e2e` (needs `DATABASE_URL`
+— it wipes and reseeds that database).
 
 ```bash
 npm test          # everything, once
@@ -106,7 +110,7 @@ Kept current here as pages/routes ship — update this table in the same PR that
 | `/admin/invites` | Admin only | Send invites, see pending vs. accepted |
 | `/invite/[token]` | Public (needs the token) | New user sets their name, accepts the invite, gets logged in |
 | `/matchups/new` | Logged in | Start a weekly matchup run: pick 2–4 attending teams from the whole league, not just your own |
-| `/matchups/[runId]` | Logged in | A matchup run's attending teams; thresholds and generated matchups land here once those stories ship |
+| `/matchups/[runId]` | Logged in | A matchup run's attending teams, threshold form, and (once generated) the printable matchup sheet — `window.print()` for a physical copy |
 
 ### API routes
 
@@ -126,6 +130,8 @@ Kept current here as pages/routes ship — update this table in the same PR that
 | `PATCH /api/teams/[id]/wrestlers/[wrestlerId]` | Own team / Admin | Edit a wrestler |
 | `POST /api/teams/[id]/wrestlers/import` | Own team / Admin | CSV import |
 | `POST /api/matchup-runs` | Logged in | Create a matchup run for 2–4 selected teams — no team-scoping gate, since picking teams other than your own is the point (see DECISIONS.md) |
+| `PATCH /api/matchup-runs/[id]` | Logged in | Set/update a run's matching thresholds |
+| `POST /api/matchup-runs/[id]/generate` | Logged in | Run the matching algorithm for a run's attending teams, persist the result (clearing any previous one) |
 
 ## Local demo
 
