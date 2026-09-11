@@ -8,6 +8,22 @@ A milestone entry can include one or more decisions inline if they happened toge
 
 ---
 
+## [2026-09-11] — [MILESTONE] Disabled Next.js's auto-injected `CLAUDE.md` block
+**Shipped:** No app code — `next dev` (Next.js 16) was auto-writing a generic "check the bundled docs
+before coding" block into `CLAUDE.md` on every run it detected an AI coding agent, re-adding it any
+time it was missing. Turned off via `next.config.ts`.
+
+**Decisions made:**
+- **[DECISION]** Set `agentRules: false` rather than commit the block or redirect it to a new
+  `AGENTS.md` file — this project's actual practice (mirror established codebase patterns, check
+  installed source directly when something's genuinely unfamiliar) already covers what the block was
+  for, so it wasn't preventing anything while the recurring rewrite of a hand-maintained instructions
+  file was real noise. See DECISIONS.md.
+
+**Next up:** Nothing changed in BACKLOG.md priority — this was a process-hygiene fix, not scope.
+
+---
+
 ## [2026-09-10] — [MILESTONE] Verification pipeline: real-Postgres migration check + Playwright e2e
 **Shipped:** No product feature — hardening how changes get verified before merge, from a discussion
 about what a team's checkpoints look like versus a solo project's. Two CI additions: a job that runs
