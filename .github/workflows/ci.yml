@@ -61,6 +61,63 @@ jobs:
         if: steps.filter.outputs.code == 'false'
         run: echo "Only Markdown files changed -- skipping install/lint/test."
 
+  # Verifies the Drizzle migrations against a real Postgres server, not just the embedded pglite the
+  # test suite uses. Two things pglite can't prove: (1) the full migration set applies cleanly, in
+  # order, from empty against real Postgres; (2) `db/schema.ts` and the migration files are in sync
+  # -- i.e. nobody edited the schema and forgot to run `npm run db:generate`.
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: migration_check
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/migration_check
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect db changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            db:
+              - 'db/**'
+              - 'drizzle.config.ts'
+      - uses: actions/setup-node@v4
+        if: steps.filter.outputs.db == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: steps.filter.outputs.db == 'true'
+      - name: Migrations apply cleanly from empty (real Postgres)
+        if: steps.filter.outputs.db == 'true'
+        run: npm run db:migrate:ci
+      - name: schema.ts and migrations are in sync (no forgotten db:generate)
+        if: steps.filter.outputs.db == 'true'
+        run: |
+          npm run db:generate
+          if [ -n "$(git status --porcelain db/)" ]; then
+            echo "::error::db/schema.ts has changes not captured in a migration file."
+            echo "Run 'npm run db:generate' locally and commit the generated migration + snapshot."
+            git status --porcelain db/
+            git --no-pager diff -- db/
+            exit 1
+          fi
+          echo "schema.ts and db/migrations are in sync."
+      - name: No db changes
+        if: steps.filter.outputs.db == 'false'
+        run: echo "No db/ changes -- skipping migration check."
+
   # Tier 4: a few critical journeys through the real built app in a real browser (Playwright).
   # Builds the production bundle (so a broken build fails here too), runs it against a real Postgres
   # container, and drives login / CSV import / the full matchmaking flow. Video of every journey is
