@@ -60,3 +60,131 @@ jobs:
       - name: No code changes
         if: steps.filter.outputs.code == 'false'
         run: echo "Only Markdown files changed -- skipping install/lint/test."
+
+  # Verifies the Drizzle migrations against a real Postgres server, not just the embedded pglite the
+  # test suite uses. Two things pglite can't prove: (1) the full migration set applies cleanly, in
+  # order, from empty against real Postgres; (2) `db/schema.ts` and the migration files are in sync
+  # -- i.e. nobody edited the schema and forgot to run `npm run db:generate`.
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: migration_check
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/migration_check
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect db changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            db:
+              - 'db/**'
+              - 'drizzle.config.ts'
+      - uses: actions/setup-node@v4
+        if: steps.filter.outputs.db == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: steps.filter.outputs.db == 'true'
+      - name: Migrations apply cleanly from empty (real Postgres)
+        if: steps.filter.outputs.db == 'true'
+        run: npm run db:migrate:ci
+      - name: schema.ts and migrations are in sync (no forgotten db:generate)
+        if: steps.filter.outputs.db == 'true'
+        run: |
+          npm run db:generate
+          if [ -n "$(git status --porcelain db/)" ]; then
+            echo "::error::db/schema.ts has changes not captured in a migration file."
+            echo "Run 'npm run db:generate' locally and commit the generated migration + snapshot."
+            git status --porcelain db/
+            git --no-pager diff -- db/
+            exit 1
+          fi
+          echo "schema.ts and db/migrations are in sync."
+      - name: No db changes
+        if: steps.filter.outputs.db == 'false'
+        run: echo "No db/ changes -- skipping migration check."
+
+  # Tier 4: a few critical journeys through the real built app in a real browser (Playwright).
+  # Builds the production bundle (so a broken build fails here too), runs it against a real Postgres
+  # container, and drives login / CSV import / the full matchmaking flow. Video of every journey is
+  # in the uploaded playwright-report artifact.
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/e2e
+      DB_DRIVER: pg
+      E2E_TEST_MODE: "1"
+      SESSION_SECRET: e2e-fixed-non-secret-value-for-ci-only-do-not-reuse
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect code changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!**/*.md'
+      - uses: actions/setup-node@v4
+        if: steps.filter.outputs.code == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: steps.filter.outputs.code == 'true'
+      - name: Install Playwright browser
+        if: steps.filter.outputs.code == 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Migrate + seed the e2e database
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          npm run db:migrate:ci
+          npm run e2e:seed
+      - run: npm run test:e2e
+        if: steps.filter.outputs.code == 'true'
+      - name: Upload Playwright report (HTML + videos + traces)
+        if: always() && steps.filter.outputs.code == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+      - name: Publish e2e report
+        if: always() && steps.filter.outputs.code == 'true'
+        uses: dorny/test-reporter@v1
+        with:
+          name: E2E Tests
+          path: test-results/e2e-junit.xml
+          reporter: java-junit
+          use-actions-summary: false
+      - name: No code changes
+        if: steps.filter.outputs.code == 'false'
+        run: echo "Only Markdown files changed -- skipping e2e."

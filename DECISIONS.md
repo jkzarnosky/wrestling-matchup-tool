@@ -30,6 +30,98 @@ noise. Verified: `agentRules: false` stops the write (confirmed via a `next dev`
 
 ---
 
+## 2026-09-10 — Playwright e2e: DB driver made pluggable, and how the test drives the OTP login
+
+Adding Tier 4 (Playwright) forced two supporting decisions.
+
+**`db/index.ts` picks its driver from the URL now.** It was hardwired to `@neondatabase/serverless`
+(HTTP), which only talks to Neon/Vercel/Supabase endpoints — so the e2e job couldn't run the real app
+against a plain Postgres service container. Alternatives: (1) give CI a secret pointing at a real Neon
+e2e database — most faithful, but needs JZ to provision one and the PR's CI stays red until then; (2)
+run a Neon websocket proxy in the container — extra moving part for no real gain. Chose to make the
+driver pluggable: node-postgres for a non-Neon URL, Neon serverless for a `*.neon.tech` URL, override
+with `DB_DRIVER`. Prod on Vercel is unchanged; local dev against Docker Postgres now works too, no Neon
+account needed. `pg` moves from a dev-only dep (it was already pulled in for the migration CI check) to
+a real dependency.
+
+**The e2e login uses a test seam, not a bypass.** The one-time code is SHA-256 hashed in the DB and
+never stored plaintext, so the suite can't read it back. Options weighed: (a) a test-only "just make me
+a session" route — fast, but then the real login UI is never exercised; (b) brute-force the 6-digit code
+against the stored hash — works (SHA-256, 1M candidates, sub-second) but too cute for a codebase modeled
+on a regulated shop, and couples the test to the hash impl; (c) a deterministic code in test mode —
+one env var away from every production login code being `000000`. Chose (d): when `E2E_TEST_MODE=1`,
+the app appends each issued code to a local file (`e2e/.artifacts/login-codes.log`) and the test reads
+the latest line. Single gate on an explicit opt-in env var never set in a real deployment; even if it
+were, all it does is write a meaningless local file. The real email → code → session UI runs end to end.
+
+**Playwright over Cypress; video kept as a CI artifact.** Playwright for the built-in multi-browser
+support, trace viewer, and no-flake auto-waiting. `video: "on"` records every journey; the
+`playwright-report` artifact (HTML + videos + traces) uploads on every CI run — that's the "watch the
+critical paths actually run" output, downloadable from the PR checks. Not published to a always-on URL
+(GitHub Pages) yet — possible follow-up.
+
+---
+
+## 2026-09-09 — Generate weekly matchups: algorithm, mat assignment, cross-team scope
+
+The last Epic 2 story. Two real forks discussed with JZ before building, plus two smaller calls made
+along the way.
+
+**Matching algorithm: greedy nearest-weight, then a bounded local-repair pass.** Alternatives
+discussed: (1) plain greedy alone -- simplest, but a known failure mode (no backtracking, an early
+"good enough" pick can strand someone who could've been matched with a different arrangement); (2) a
+full optimal weighted-matching algorithm (Edmonds' Blossom, since 3-4 attending teams makes this a
+general, non-bipartite graph, not solvable by the simpler bipartite algorithms) -- provably best, but a
+genuinely different algorithm family, not an extension of greedy, and a multi-day implementation with
+real correctness risk hand-rolling Blossom's odd-cycle contraction for a benefit that's probably modest
+at this league's actual scale (dozens of kids, not hundreds). Chose the middle ground: plain greedy
+first, then a bounded search that tries rescuing exactly two remaining outliers by splitting one
+existing pair between them (the minimal repair actually possible post-greedy -- there's no third free
+wrestler to complete a single-outlier repair with). Verified against a real, hand-traced adversarial
+5-wrestler case (found by brute-force search, not constructed by guesswork) where plain greedy leaves 3
+outliers and repair rescues 2 of them, the 3rd being genuinely unmatchable -- see
+`__tests__/lib/matchup-generation.test.ts`.
+
+**Mat assignment: round-robin across the configured mat count, sheet grouped by mat.** Alternative:
+leave `matCount` as a pure capacity/record-keeping input with no effect on the output. Chose assignment
+-- a real printed matchup sheet at an event is virtually always organized by mat so coaches/refs know
+where to send each pair; leaving `matCount` unused in the output would make that threshold field
+decorative. Assignment order follows the order `generatePairings` produced pairs in (not otherwise
+optimized) -- even spread across mats, nothing fancier.
+
+**Cross-team only, never a teammate.** Not spelled out as explicitly in the AC as the other rules, but
+"matches wrestlers *across* selected teams" is the strongest reading, and matches how a real weekly
+dual actually works (against other clubs, not your own team). Enforced as a hard eligibility rule.
+
+**Weight percent mode is relative to the lighter wrestler, not the heavier or an average.** The
+standard convention real weight-class allowances use. Test coverage specifically distinguishes this
+from the (wrong) alternative of using the heavier wrestler as the denominator, since the two can
+disagree right at a threshold boundary.
+
+**Printable sheet: plain browser print (`window.print()` + `@media print` CSS), not a PDF-generation
+dependency.** AC just says "printable" -- a `Ctrl+P` of the matchup-run page, with the interactive
+chrome (forms, buttons) hidden via a `.no-print` utility class, satisfies that without adding a new
+dependency for a first pass. Revisit if a more polished export is actually wanted later.
+
+---
+
+## 2026-09-09 — Thresholds are a separate step on the same run, not folded into creation
+
+"Configure weekly matching thresholds" adds `PATCH /api/matchup-runs/[id]` rather than accepting
+thresholds as part of `POST /api/matchup-runs` at creation time. Keeps each Epic 2 story owning a
+distinct step of the same run (select teams → configure thresholds → generate), matching the
+incremental-persistence decision from 2026-09-03, rather than one story's endpoint growing to cover the
+next one's scope. Callable more than once -- a Rep realizing they need to widen a threshold after
+seeing the roster shouldn't need to abandon the run and start over.
+
+Threshold columns on `matchup_runs` are nullable, not DB-defaulted. The AC's "pre-fill with sensible
+defaults" is a UI-level suggestion (`DEFAULT_AGE_DIFF_YEARS` etc., exported from `lib/matchup-runs.ts`
+as the single source of truth the form imports) the Rep can change before saving -- not a value the DB
+would silently apply if they somehow skipped the step. Mat count has no default at all, per the AC
+("varies too much week to week for one to mean anything") and the earlier threshold-defaults decision.
+
+---
+
 ## 2026-09-03 — Matchup run persistence starts now, built incrementally
 
 JZ's call after I flagged this mid-implementation rather than during the Epic 2 AC review (should have

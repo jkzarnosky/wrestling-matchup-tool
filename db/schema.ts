@@ -141,17 +141,39 @@ export const wrestlerHistory = pgTable("wrestler_history", {
   changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const weightDiffModeEnum = pgEnum("weight_diff_mode", ["flat", "percent"]);
+
 // Epic 2: a week's matchup run. Starts with just who's hosting + which teams are attending
 // (Epic 2 story "Select attending teams for the week") -- "Configure weekly matching thresholds"
 // and "Generate weekly matchups" fill in the rest of this table (thresholds, results) as those
 // ship, rather than each inventing their own storage. See DECISIONS.md.
-export const matchupRuns = pgTable("matchup_runs", {
-  id: serial("id").primaryKey(),
-  createdBy: integer("created_by")
-    .notNull()
-    .references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+//
+// Threshold columns are nullable, not defaulted at the DB level -- a run starts with none of them
+// set, and "Configure weekly matching thresholds" fills them in via a separate action (the AC's
+// "pre-fill with sensible defaults" is a UI-level suggestion the Rep can change, not a DB default
+// they'd have to override). CHECK constraints below allow NULL through (unset) but reject an
+// invalid value once one's actually provided -- standard SQL CHECK semantics, no NULL-guard needed.
+export const matchupRuns = pgTable(
+  "matchup_runs",
+  {
+    id: serial("id").primaryKey(),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    ageDiffYears: integer("age_diff_years"),
+    skillDiffLevels: integer("skill_diff_levels"),
+    weightDiffMode: weightDiffModeEnum("weight_diff_mode"),
+    weightDiffValue: real("weight_diff_value"),
+    matCount: integer("mat_count"),
+  },
+  (table) => [
+    check("matchup_runs_age_diff_non_negative", sql`${table.ageDiffYears} >= 0`),
+    check("matchup_runs_skill_diff_non_negative", sql`${table.skillDiffLevels} >= 0`),
+    check("matchup_runs_weight_diff_positive", sql`${table.weightDiffValue} > 0`),
+    check("matchup_runs_mat_count_positive", sql`${table.matCount} >= 1`),
+  ]
+);
 
 // Join table: which teams are attending a given run. The AC's "2-4 teams" rule isn't a DB
 // constraint -- Postgres can't cheaply express "this many related rows exist" as a CHECK, so it's
@@ -168,4 +190,31 @@ export const matchupRunTeams = pgTable(
       .references(() => teams.id),
   },
   (table) => [primaryKey({ columns: [table.runId, table.teamId] })]
+);
+
+// Epic 2 story "Generate weekly matchups" -- one row per real pairing (wrestlerTwoId set, matNumber
+// set) or per outlier (wrestlerTwoId AND matNumber both null -- an outlier isn't assigned a mat,
+// since it isn't a match). Generating is idempotent: every call clears a run's existing rows first
+// and inserts a fresh set, so re-running after fixing a wrestler's weight doesn't need manual cleanup.
+export const matchupRunPairings = pgTable(
+  "matchup_run_pairings",
+  {
+    id: serial("id").primaryKey(),
+    runId: integer("run_id")
+      .notNull()
+      .references(() => matchupRuns.id),
+    matNumber: integer("mat_number"),
+    wrestlerOneId: integer("wrestler_one_id")
+      .notNull()
+      .references(() => wrestlers.id),
+    wrestlerTwoId: integer("wrestler_two_id").references(() => wrestlers.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("matchup_run_pairings_no_self_match", sql`${table.wrestlerOneId} != ${table.wrestlerTwoId}`),
+    check(
+      "matchup_run_pairings_mat_iff_matched",
+      sql`(${table.wrestlerTwoId} IS NULL AND ${table.matNumber} IS NULL) OR (${table.wrestlerTwoId} IS NOT NULL AND ${table.matNumber} IS NOT NULL)`
+    ),
+  ]
 );
